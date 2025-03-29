@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -132,21 +131,12 @@ const CashSummary = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Saldo</p>
-                      <p className={cn(
-                        "text-2xl font-bold",
-                        isPositiveBalance ? "text-blue-600" : "text-red-600"
-                      )}>
+                      <p className={`text-2xl font-bold ${isPositiveBalance ? "text-blue-600" : "text-red-600"}`}>
                         Rp {balance.toLocaleString('id-ID')}
                       </p>
                     </div>
-                    <div className={cn(
-                      "h-10 w-10 rounded-full flex items-center justify-center",
-                      isPositiveBalance ? "bg-blue-100" : "bg-red-100"
-                    )}>
-                      <Wallet className={cn(
-                        "h-6 w-6",
-                        isPositiveBalance ? "text-blue-600" : "text-red-600"
-                      )} />
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${isPositiveBalance ? "bg-blue-100" : "bg-red-100"}`}>
+                      <Wallet className={`h-6 w-6 ${isPositiveBalance ? "text-blue-600" : "text-red-600"}`} />
                     </div>
                   </div>
                 </CardContent>
@@ -214,10 +204,7 @@ const CashSummary = () => {
                         </div>
                       </div>
                     </div>
-                    <div className={cn(
-                      "font-semibold",
-                      transaction.transactionType === 'income' ? 'text-green-600' : 'text-red-600'
-                    )}>
+                    <div className={`font-semibold ${transaction.transactionType === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                       {transaction.transactionType === 'income' ? '+' : '-'} Rp {transaction.amount.toLocaleString('id-ID')}
                     </div>
                   </div>

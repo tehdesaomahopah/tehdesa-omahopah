@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -40,7 +41,7 @@ const CashSummary = () => {
 
   const isLoading = isLoadingBusiness || isLoadingCashData;
 
-  // Date setter functions that pass no arguments to the Calendar onSelect
+  // Date setter functions that work with Calendar's onSelect
   const handleFromDateChange = (date: Date | undefined) => {
     if (date) {
       setDateRange(prev => ({ ...prev, from: date }));

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -41,22 +40,18 @@ const CashSummary = () => {
 
   const isLoading = isLoadingBusiness || isLoadingCashData;
 
-  // Date setter functions that don't take arguments to fix TypeScript errors
-  function handleFromDateChange() {
-    return function(date: Date | undefined) {
-      if (date) {
-        setDateRange(prev => ({ ...prev, from: date }));
-      }
-    };
-  }
+  // Date setter functions that pass no arguments to the Calendar onSelect
+  const handleFromDateChange = (date: Date | undefined) => {
+    if (date) {
+      setDateRange(prev => ({ ...prev, from: date }));
+    }
+  };
 
-  function handleToDateChange() {
-    return function(date: Date | undefined) {
-      if (date) {
-        setDateRange(prev => ({ ...prev, to: date }));
-      }
-    };
-  }
+  const handleToDateChange = (date: Date | undefined) => {
+    if (date) {
+      setDateRange(prev => ({ ...prev, to: date }));
+    }
+  };
 
   if (isLoading) {
     return (
@@ -162,7 +157,7 @@ const CashSummary = () => {
                     <Calendar
                       mode="single"
                       selected={dateRange.from}
-                      onSelect={handleFromDateChange()}
+                      onSelect={handleFromDateChange}
                       initialFocus
                     />
                   </PopoverContent>
@@ -183,7 +178,7 @@ const CashSummary = () => {
                     <Calendar
                       mode="single"
                       selected={dateRange.to}
-                      onSelect={handleToDateChange()}
+                      onSelect={handleToDateChange}
                       initialFocus
                     />
                   </PopoverContent>

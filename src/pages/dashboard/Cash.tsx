@@ -199,7 +199,7 @@ const CashSummary = () => {
                       )}
                       <div>
                         <p className="font-medium">{transaction.description}</p>
-                        <div className="flex items-center text-xs text-gray-500">
+                        <div className="text-xs text-gray-500">
                           {format(transaction.date, "dd MMM yyyy")} · {transaction.type}
                         </div>
                       </div>

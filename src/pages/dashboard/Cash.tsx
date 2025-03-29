@@ -204,7 +204,7 @@ const CashSummary = () => {
                         </div>
                       </div>
                     </div>
-                    <div className={`font-semibold ${transaction.transactionType === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                    <div className={transaction.transactionType === 'income' ? 'font-semibold text-green-600' : 'font-semibold text-red-600'}>
                       {transaction.transactionType === 'income' ? '+' : '-'} Rp {transaction.amount.toLocaleString('id-ID')}
                     </div>
                   </div>

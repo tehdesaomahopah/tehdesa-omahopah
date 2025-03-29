@@ -146,7 +146,7 @@ const CashSummary = () => {
                       selected={dateRange.from}
                       onSelect={(date) => date && setDateRange({ ...dateRange, from: date })}
                       initialFocus
-                      className="p-3 pointer-events-auto"
+                      className={cn("p-3 pointer-events-auto")}
                     />
                   </PopoverContent>
                 </Popover>
@@ -168,7 +168,7 @@ const CashSummary = () => {
                       selected={dateRange.to}
                       onSelect={(date) => date && setDateRange({ ...dateRange, to: date })}
                       initialFocus
-                      className="p-3 pointer-events-auto"
+                      className={cn("p-3 pointer-events-auto")}
                     />
                   </PopoverContent>
                 </Popover>

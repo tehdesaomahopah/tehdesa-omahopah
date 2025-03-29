@@ -142,6 +142,18 @@ const FinancialReports = () => {
     });
   };
 
+  const handleFromDateChange = (date: Date | undefined) => {
+    if (date) {
+      setDateRange({ ...dateRange, from: date });
+    }
+  };
+
+  const handleToDateChange = (date: Date | undefined) => {
+    if (date) {
+      setDateRange({ ...dateRange, to: date });
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="mb-6">
@@ -203,7 +215,7 @@ const FinancialReports = () => {
                   <Calendar
                     mode="single"
                     selected={dateRange.from}
-                    onSelect={(date) => date && setDateRange({ ...dateRange, from: date })}
+                    onSelect={handleFromDateChange}
                     initialFocus
                   />
                 </PopoverContent>
@@ -231,7 +243,7 @@ const FinancialReports = () => {
                   <Calendar
                     mode="single"
                     selected={dateRange.to}
-                    onSelect={(date) => date && setDateRange({ ...dateRange, to: date })}
+                    onSelect={handleToDateChange}
                     initialFocus
                   />
                 </PopoverContent>

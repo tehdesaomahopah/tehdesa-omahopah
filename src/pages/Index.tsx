@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { format, addMonths, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -188,9 +187,9 @@ const Index = () => {
                   </div>
                 ) : (
                   <BarChart 
-                    data={chartData} 
-                    dataKey="Cijati" 
-                    fill="#10b981"
+                    data={chartData}
+                    dataKeys={["Cijati", "Shaquilla", "Kartini"]}
+                    colors={["#10b981", "#3b82f6", "#8b5cf6"]} 
                   />
                 )}
               </div>

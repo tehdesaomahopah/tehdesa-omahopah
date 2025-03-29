@@ -5,14 +5,30 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"];
 
-export const BarChart = ({ data, dataKey, fill = "#8884d8" }: { data: any[]; dataKey: string; fill?: string }) => {
+export const BarChart = ({ 
+  data, 
+  dataKeys = [], 
+  colors = ["#10b981", "#3b82f6", "#8b5cf6"], 
+  fill = "#8884d8" 
+}: { 
+  data: any[]; 
+  dataKeys?: string[];
+  colors?: string[];
+  fill?: string;
+}) => {
+  // If only a single dataKey is passed via the old API, convert it to array format
+  const dataKeysArray = dataKeys.length > 0 ? dataKeys : [fill];
+  const colorsArray = colors || ["#10b981", "#3b82f6", "#8b5cf6"];
+  
+  // Create config for the ChartContainer
+  const config = dataKeysArray.reduce((acc, key, index) => {
+    acc[key] = { color: colorsArray[index % colorsArray.length] };
+    return acc;
+  }, {} as Record<string, { color: string }>);
+  
   return (
     <ChartContainer 
-      config={{
-        [dataKey]: {
-          color: fill
-        }
-      }} 
+      config={config} 
       className="h-80 w-full"
     >
       <RechartsBarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -20,7 +36,14 @@ export const BarChart = ({ data, dataKey, fill = "#8884d8" }: { data: any[]; dat
         <XAxis dataKey="name" />
         <YAxis />
         <ChartTooltip content={<ChartTooltipContent />} />
-        <Bar dataKey={dataKey} fill={fill} />
+        <Legend />
+        {dataKeysArray.map((key, index) => (
+          <Bar 
+            key={key} 
+            dataKey={key} 
+            fill={colorsArray[index % colorsArray.length]} 
+          />
+        ))}
       </RechartsBarChart>
     </ChartContainer>
   );

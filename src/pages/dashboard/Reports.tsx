@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -8,7 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { CalendarIcon, FileDown, Loader2, Pencil, Trash2 } from "lucide-react";
+import { CalendarIcon, FileDown, Loader2 } from "lucide-react";
 import { format, isWithinInterval, startOfMonth, endOfMonth } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -28,53 +27,46 @@ const FinancialReports = () => {
     to: endOfMonth(new Date()),
   });
   
-  // Fetch businesses
   const { data: businesses = [], isLoading: isLoadingBusinesses } = useQuery({
     queryKey: ['businesses'],
     queryFn: getBusinesses
   });
   
-  // Add "All businesses" option
   const businessOptions = [
     { id: "all", name: "Semua Usaha" },
     ...businesses
   ];
   
-  // Fetch incomes based on filters
   const { 
     data: incomes = [], 
     isLoading: isLoadingIncomes 
   } = useQuery({
     queryKey: ['incomes', selectedBusiness, dateRange.from, dateRange.to],
     queryFn: () => getIncomesByDateRange(dateRange.from, dateRange.to, selectedBusiness),
-    enabled: businessOptions.length > 1 // Only run after businesses are loaded
+    enabled: businessOptions.length > 1
   });
   
-  // Fetch expenses based on filters
   const { 
     data: expenses = [], 
     isLoading: isLoadingExpenses 
   } = useQuery({
     queryKey: ['expenses', selectedBusiness, dateRange.from, dateRange.to],
     queryFn: () => getExpensesByDateRange(dateRange.from, dateRange.to, selectedBusiness),
-    enabled: businessOptions.length > 1 // Only run after businesses are loaded
+    enabled: businessOptions.length > 1
   });
   
   const isLoading = isLoadingBusinesses || isLoadingIncomes || isLoadingExpenses;
   
-  // Calculate totals
   const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
   const totalExpense = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const balance = totalIncome - totalExpense;
   
-  // Prepare data for charts
   const chartData = [
     { name: "Pendapatan", amount: totalIncome },
     { name: "Pengeluaran", amount: totalExpense },
     { name: "Saldo", amount: balance },
   ];
   
-  // Group transactions by business
   const incomeByBusiness: Record<string, number> = {};
   const expenseByBusiness: Record<string, number> = {};
   
@@ -92,7 +84,6 @@ const FinancialReports = () => {
     expenseByBusiness[expense.businessId] += expense.amount;
   });
   
-  // Prepare data for business summary
   const businessSummary = businesses.map((business) => ({
     id: business.id,
     name: business.name,
@@ -101,24 +92,7 @@ const FinancialReports = () => {
     balance: (incomeByBusiness[business.id] || 0) - (expenseByBusiness[business.id] || 0),
   }));
   
-  // Mock handlers for edit and delete functionality
-  const handleEdit = (id: string, type: 'income' | 'expense') => {
-    toast({
-      title: `Edit ${type === 'income' ? 'Pendapatan' : 'Pengeluaran'}`,
-      description: `Mengedit item dengan ID: ${id}`,
-    });
-  };
-  
-  const handleDelete = (id: string, type: 'income' | 'expense') => {
-    toast({
-      title: `Hapus ${type === 'income' ? 'Pendapatan' : 'Pengeluaran'}`,
-      description: `Menghapus item dengan ID: ${id}`,
-    });
-  };
-  
-  // Function to download report as CSV
   const handleDownloadReport = () => {
-    // Combine incomes and expenses for the report
     const reportData = [
       ...incomes.map(income => ({
         date: format(income.date, "yyyy-MM-dd"),
@@ -134,11 +108,10 @@ const FinancialReports = () => {
         type: 'Expense',
         category: expense.type,
         description: expense.description,
-        amount: -expense.amount // negative for expenses
+        amount: -expense.amount
       }))
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
-    // Create CSV content
     const headers = ['Date', 'Business', 'Type', 'Category', 'Description', 'Amount'];
     const csvRows = [
       headers.join(','),
@@ -153,7 +126,6 @@ const FinancialReports = () => {
     ];
     const csvContent = csvRows.join('\n');
     
-    // Create and download file
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -276,7 +248,6 @@ const FinancialReports = () => {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Financial Summary Card - Full Width */}
           <Card>
             <CardHeader>
               <CardTitle>Ringkasan Keuangan</CardTitle>
@@ -326,7 +297,6 @@ const FinancialReports = () => {
             </CardContent>
           </Card>
           
-          {/* Business Summary Card - Full Width */}
           <Card>
             <CardHeader>
               <CardTitle>Ringkasan per Usaha</CardTitle>
@@ -375,7 +345,6 @@ const FinancialReports = () => {
             </CardContent>
           </Card>
 
-          {/* Detailed Transactions Card - Full Width */}
           <Card>
             <CardHeader>
               <CardTitle>Laporan Transaksi Detail</CardTitle>
@@ -394,7 +363,6 @@ const FinancialReports = () => {
                       <TableHead>Deskripsi</TableHead>
                       <TableHead>Tipe</TableHead>
                       <TableHead className="text-right">Nominal</TableHead>
-                      <TableHead className="text-center">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -429,32 +397,12 @@ const FinancialReports = () => {
                             <TableCell className={`text-right font-medium ${transaction.transactionType === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                               {transaction.transactionType === 'income' ? '+' : '-'} Rp {transaction.amount.toLocaleString('id-ID')}
                             </TableCell>
-                            <TableCell>
-                              <div className="flex justify-center gap-2">
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  onClick={() => handleEdit(transaction.id, transaction.transactionType)}
-                                  className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  onClick={() => handleDelete(transaction.id, transaction.transactionType)}
-                                  className="h-8 w-8 text-red-600 hover:text-red-800 hover:bg-red-50"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
                           </TableRow>
                         );
                       })}
                     {(incomes.length + expenses.length) === 0 && (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                        <TableCell colSpan={6} className="text-center py-6 text-gray-500">
                           Tidak ada data transaksi untuk filter yang dipilih.
                         </TableCell>
                       </TableRow>

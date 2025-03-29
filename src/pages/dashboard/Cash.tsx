@@ -3,12 +3,13 @@ import { useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import { format, subMonths, startOfMonth, endOfMonth, getYear } from "date-fns";
 import { ArrowUpCircle, ArrowDownCircle, Wallet, Loader2 } from "lucide-react";
 import { useCashData } from "@/hooks/cash/useCashData";
 import { useBusinessResolver } from "@/hooks/business/useBusinessResolver";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const CashSummary = () => {
   const { businessId } = useParams<{ businessId: string }>();
@@ -16,6 +17,19 @@ const CashSummary = () => {
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
   const isMobile = useIsMobile();
   
+  const currentYear = getYear(new Date());
+  const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+  
+  const handleYearChange = (year: string) => {
+    const newYear = parseInt(year);
+    setSelectedYear(newYear);
+    
+    const newDate = new Date(selectedMonth);
+    newDate.setFullYear(newYear);
+    setSelectedMonth(newDate);
+  };
+
   const {
     isLoading: isLoadingCashData,
     error,
@@ -76,16 +90,32 @@ const CashSummary = () => {
           <CardHeader className="pb-2">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
               <CardTitle>Ringkasan Kas</CardTitle>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handlePreviousMonth}>
-                  &lt;
-                </Button>
-                <span className="px-2">
-                  {format(selectedMonth, "MMMM yyyy")}
-                </span>
-                <Button variant="outline" size="sm" onClick={handleNextMonth}>
-                  &gt;
-                </Button>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                <div className="w-full sm:w-auto mb-2 sm:mb-0">
+                  <Select value={selectedYear.toString()} onValueChange={handleYearChange}>
+                    <SelectTrigger className="h-8 w-24">
+                      <SelectValue placeholder="Tahun" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {yearOptions.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={handlePreviousMonth}>
+                    &lt;
+                  </Button>
+                  <span className="px-2">
+                    {format(selectedMonth, "MMMM yyyy")}
+                  </span>
+                  <Button variant="outline" size="sm" onClick={handleNextMonth}>
+                    &gt;
+                  </Button>
+                </div>
               </div>
             </div>
             <CardDescription>

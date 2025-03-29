@@ -136,8 +136,8 @@ const CashSummary = () => {
                         Rp {balance.toLocaleString('id-ID')}
                       </p>
                     </div>
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${isPositiveBalance ? "bg-blue-100" : "bg-red-100"}`}>
-                      <Wallet className={`h-6 w-6 ${isPositiveBalance ? "text-blue-600" : "text-red-600"}`} />
+                    <div className={isPositiveBalance ? "h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center" : "h-10 w-10 rounded-full bg-red-100 flex items-center justify-center"}>
+                      <Wallet className={isPositiveBalance ? "h-6 w-6 text-blue-600" : "h-6 w-6 text-red-600"} />
                     </div>
                   </div>
                 </CardContent>

@@ -8,6 +8,7 @@ import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ArrowUpCircle, ArrowDownCircle, Wallet, Loader2 } from "lucide-react";
 import { useCashData } from "@/hooks/cash/useCashData";
 import { useBusinessResolver } from "@/hooks/business/useBusinessResolver";
+import { cn } from "@/lib/utils";
 
 const CashSummary = () => {
   const { businessId } = useParams<{ businessId: string }>();
@@ -60,8 +61,8 @@ const CashSummary = () => {
     );
   }
 
-  // Fixed error with balance classes
-  const balanceColorClass = balance >= 0 ? 'blue' : 'red';
+  // Determine color classes based on balance
+  const isPositiveBalance = balance >= 0;
 
   return (
     <DashboardLayout>
@@ -125,17 +126,26 @@ const CashSummary = () => {
                 </CardContent>
               </Card>
               
-              <Card className={`border-${balanceColorClass}-100`}>
+              <Card className={cn(isPositiveBalance ? "border-blue-100" : "border-red-100")}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Saldo</p>
-                      <p className={`text-2xl font-bold text-${balanceColorClass}-600`}>
+                      <p className={cn(
+                        "text-2xl font-bold", 
+                        isPositiveBalance ? "text-blue-600" : "text-red-600"
+                      )}>
                         Rp {balance.toLocaleString('id-ID')}
                       </p>
                     </div>
-                    <div className={`h-10 w-10 rounded-full bg-${balanceColorClass}-100 flex items-center justify-center`}>
-                      <Wallet className={`h-6 w-6 text-${balanceColorClass}-600`} />
+                    <div className={cn(
+                      "h-10 w-10 rounded-full flex items-center justify-center", 
+                      isPositiveBalance ? "bg-blue-100" : "bg-red-100"
+                    )}>
+                      <Wallet className={cn(
+                        "h-6 w-6", 
+                        isPositiveBalance ? "text-blue-600" : "text-red-600"
+                      )} />
                     </div>
                   </div>
                 </CardContent>

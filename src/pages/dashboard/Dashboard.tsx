@@ -1,195 +1,184 @@
-
-import { useParams } from "react-router-dom";
-import DashboardLayout from "@/components/layout/DashboardLayout";
+import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Bar } from "recharts";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  Calendar as CalendarIcon
-} from "lucide-react";
-import { format } from "date-fns";
-
-// Dummy data for charts
-const incomeData = [
-  { name: 'Jan', amount: 4000 },
-  { name: 'Feb', amount: 3000 },
-  { name: 'Mar', amount: 5000 },
-  { name: 'Apr', amount: 4500 },
-  { name: 'May', amount: 6000 },
-  { name: 'Jun', amount: 5500 },
-];
-
-const expenseData = [
-  { name: 'Jan', amount: 2000 },
-  { name: 'Feb', amount: 2200 },
-  { name: 'Mar', amount: 2500 },
-  { name: 'Apr', amount: 2300 },
-  { name: 'May', amount: 3000 },
-  { name: 'Jun', amount: 2800 },
-];
-
-const comparativeData = [
-  { name: 'Jan', income: 4000, expense: 2000 },
-  { name: 'Feb', income: 3000, expense: 2200 },
-  { name: 'Mar', income: 5000, expense: 2500 },
-  { name: 'Apr', income: 4500, expense: 2300 },
-  { name: 'May', income: 6000, expense: 3000 },
-  { name: 'Jun', income: 5500, expense: 2800 },
-];
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useParams } from "react-router-dom";
+import { BarChart, LineChart, PieChart } from "@/components/ui/chart";
+import { ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 
 const Dashboard = () => {
   const { businessId } = useParams<{ businessId: string }>();
-  
-  const totalIncome = incomeData.reduce((sum, item) => sum + item.amount, 0);
-  const totalExpense = expenseData.reduce((sum, item) => sum + item.amount, 0);
-  const profit = totalIncome - totalExpense;
-  const profitRate = (profit / totalIncome) * 100;
+
+  // Dummy data for demonstration
+  const incomeData = [
+    { name: "Jan", value: 2400 },
+    { name: "Feb", value: 1398 },
+    { name: "Mar", value: 3200 },
+    { name: "Apr", value: 2780 },
+    { name: "May", value: 1890 },
+    { name: "Jun", value: 2390 },
+    { name: "Jul", value: 3490 },
+  ];
+
+  const expenseData = [
+    { name: "Jan", value: 1400 },
+    { name: "Feb", value: 2398 },
+    { name: "Mar", value: 1200 },
+    { name: "Apr", value: 1780 },
+    { name: "May", value: 2890 },
+    { name: "Jun", value: 1390 },
+    { name: "Jul", value: 2490 },
+  ];
+
+  const cashFlowData = [
+    { name: "Jan", income: 2400, expense: 1400 },
+    { name: "Feb", income: 1398, expense: 2398 },
+    { name: "Mar", income: 3200, expense: 1200 },
+    { name: "Apr", income: 2780, expense: 1780 },
+    { name: "May", income: 1890, expense: 2890 },
+    { name: "Jun", income: 2390, expense: 1390 },
+    { name: "Jul", income: 3490, expense: 2490 },
+  ];
+
+  const pieChartData = [
+    { name: "Income", value: 2400 },
+    { name: "Expense", value: 1398 },
+    { name: "Cash", value: 3200 },
+  ];
 
   return (
-    <DashboardLayout>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-        <p className="text-gray-600">Ringkasan keuangan Anda per {format(new Date(), "dd MMMM yyyy")}</p>
-      </div>
+    <div className="container mx-auto py-8">
+      <header className="mb-6">
+        <h1 className="text-3xl font-semibold text-gray-800">Dashboard - {businessId}</h1>
+        <p className="text-gray-500">Selamat datang di dashboard keuangan Anda.</p>
+      </header>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Total Pendapatan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center">
-              <TrendingUp className="w-5 h-5 mr-2 text-green-500" />
-              <div className="text-2xl font-bold">Rp {totalIncome.toLocaleString()}</div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Total Pengeluaran</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center">
-              <TrendingDown className="w-5 h-5 mr-2 text-red-500" />
-              <div className="text-2xl font-bold">Rp {totalExpense.toLocaleString()}</div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Keuntungan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col">
-              <div className="flex items-center">
-                <DollarSign className="w-5 h-5 mr-2 text-blue-500" />
-                <div className="text-2xl font-bold">Rp {profit.toLocaleString()}</div>
-              </div>
-              <div className="text-sm text-gray-500 mt-1">
-                Profit rate: {profitRate.toFixed(1)}%
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Pendapatan vs Pengeluaran</CardTitle>
-            <CardDescription>Perbandingan 6 bulan terakhir</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={comparativeData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `Rp ${value.toLocaleString()}`} />
-                  <Legend />
-                  <Bar dataKey="income" name="Pendapatan" fill="#10B981" />
-                  <Bar dataKey="expense" name="Pengeluaran" fill="#EF4444" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Tren Keuangan</CardTitle>
-            <CardDescription>Perkembangan 6 bulan terakhir</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={comparativeData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `Rp ${value.toLocaleString()}`} />
-                  <Legend />
-                  <Line type="monotone" dataKey="income" name="Pendapatan" stroke="#10B981" activeDot={{ r: 8 }} />
-                  <Line type="monotone" dataKey="expense" name="Pengeluaran" stroke="#EF4444" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent transactions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Transaksi Terbaru</CardTitle>
-          <CardDescription>5 transaksi terakhir</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[
-              { type: 'income', description: 'Penjualan Teh Desa', amount: 850000, date: '2023-06-15' },
-              { type: 'expense', description: 'Belanja Bahan', amount: 350000, date: '2023-06-14' },
-              { type: 'income', description: 'Konsinyasi Toko Jaya', amount: 540000, date: '2023-06-13' },
-              { type: 'expense', description: 'Upah Pegawai', amount: 450000, date: '2023-06-12' },
-              { type: 'income', description: 'Penjualan Online', amount: 320000, date: '2023-06-10' },
-            ].map((transaction, index) => (
-              <div key={index} className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <div className="flex items-center">
-                  {transaction.type === 'income' ? (
-                    <ArrowUpCircle className="w-10 h-10 mr-3 text-green-500" />
-                  ) : (
-                    <ArrowDownCircle className="w-10 h-10 mr-3 text-red-500" />
-                  )}
-                  <div>
-                    <p className="font-medium">{transaction.description}</p>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <CalendarIcon className="w-3 h-3 mr-1" />
-                      <span>{format(new Date(transaction.date), "dd MMM yyyy")}</span>
-                    </div>
-                  </div>
+      <Tabs defaultvalue="ringkasan" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="ringkasan">Ringkasan</TabsTrigger>
+          <TabsTrigger value="pendapatan">Pendapatan</TabsTrigger>
+          <TabsTrigger value="pengeluaran">Pengeluaran</TabsTrigger>
+          <TabsTrigger value="arus-kas">Arus Kas</TabsTrigger>
+          <TabsTrigger value="laporan">Laporan</TabsTrigger>
+        </TabsList>
+        <TabsContent value="ringkasan" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Total Pendapatan</CardTitle>
+                <CardDescription>Ringkasan pendapatan keseluruhan</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">Rp 12,500,000</div>
+                <div className="flex items-center text-sm text-green-500 mt-2">
+                  <ArrowUpCircle className="h-4 w-4 mr-1" />
+                  <span>+12% dari bulan lalu</span>
                 </div>
-                <div className={`font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                  {transaction.type === 'income' ? '+' : '-'} Rp {transaction.amount.toLocaleString()}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Total Pengeluaran</CardTitle>
+                <CardDescription>Ringkasan pengeluaran keseluruhan</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">Rp 5,500,000</div>
+                <div className="flex items-center text-sm text-red-500 mt-2">
+                  <ArrowDownCircle className="h-4 w-4 mr-1" />
+                  <span>-8% dari bulan lalu</span>
                 </div>
-              </div>
-            ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Arus Kas Bersih</CardTitle>
+                <CardDescription>Ringkasan arus kas bersih</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">Rp 7,000,000</div>
+                <div className="text-sm text-gray-500 mt-2">Stabil</div>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
-    </DashboardLayout>
+
+          <Separator className="my-6" />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Grafik Pendapatan</CardTitle>
+                <CardDescription>Analisis tren pendapatan dari waktu ke waktu</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LineChart data={incomeData} dataKey="value" stroke="#82ca9d" />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Grafik Pengeluaran</CardTitle>
+                <CardDescription>Analisis tren pengeluaran dari waktu ke waktu</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BarChart data={expenseData} dataKey="value" fill="#e48080" />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="pendapatan">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pendapatan</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LineChart data={incomeData} dataKey="value" stroke="#82ca9d" />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="pengeluaran">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pengeluaran</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <BarChart data={expenseData} dataKey="value" fill="#e48080" />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="arus-kas">
+          <Card>
+            <CardHeader>
+              <CardTitle>Arus Kas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LineChart
+                data={cashFlowData}
+                dataKey="income"
+                stroke="#82ca9d"
+                dataKey2="expense"
+                stroke2="#e48080"
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="laporan">
+          <Card>
+            <CardHeader>
+              <CardTitle>Laporan</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PieChart data={pieChartData} dataKey="value" nameKey="name" />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Business, 
@@ -256,4 +255,84 @@ export async function getExpensesByDateRange(from: Date, to: Date, businessId?: 
   }
   
   return data.map(mapExpenseFromRow);
+}
+
+export async function updateIncome(id: string, income: {
+  date?: Date;
+  type?: string;
+  description?: string;
+  amount?: number;
+}): Promise<Income> {
+  const updateData: any = {};
+  
+  if (income.date) updateData.date = income.date.toISOString();
+  if (income.type) updateData.type = income.type;
+  if (income.description) updateData.description = income.description;
+  if (income.amount !== undefined) updateData.amount = income.amount;
+
+  const { data, error } = await supabase
+    .from('incomes')
+    .update(updateData)
+    .eq('id', id)
+    .select()
+    .single();
+    
+  if (error) {
+    console.error("Error updating income:", error);
+    throw error;
+  }
+  
+  return mapIncomeFromRow(data);
+}
+
+export async function deleteIncome(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('incomes')
+    .delete()
+    .eq('id', id);
+    
+  if (error) {
+    console.error("Error deleting income:", error);
+    throw error;
+  }
+}
+
+export async function updateExpense(id: string, expense: {
+  date?: Date;
+  type?: string;
+  description?: string;
+  amount?: number;
+}): Promise<Expense> {
+  const updateData: any = {};
+  
+  if (expense.date) updateData.date = expense.date.toISOString();
+  if (expense.type) updateData.type = expense.type;
+  if (expense.description) updateData.description = expense.description;
+  if (expense.amount !== undefined) updateData.amount = expense.amount;
+
+  const { data, error } = await supabase
+    .from('expenses')
+    .update(updateData)
+    .eq('id', id)
+    .select()
+    .single();
+    
+  if (error) {
+    console.error("Error updating expense:", error);
+    throw error;
+  }
+  
+  return mapExpenseFromRow(data);
+}
+
+export async function deleteExpense(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('expenses')
+    .delete()
+    .eq('id', id);
+    
+  if (error) {
+    console.error("Error deleting expense:", error);
+    throw error;
+  }
 }

@@ -2,7 +2,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Income } from "@/types/supabase";
-import { getIncomesByBusinessId, addIncome } from "@/services/businessService";
+import { 
+  getIncomesByBusinessId, 
+  addIncome, 
+  updateIncome, 
+  deleteIncome 
+} from "@/services/businessService";
 import { useBusinessResolver } from "@/hooks/business/useBusinessResolver";
 
 export const useIncomeData = (businessId: string | undefined) => {
@@ -38,11 +43,49 @@ export const useIncomeData = (businessId: string | undefined) => {
     },
   });
 
+  // Update income mutation
+  const updateIncomeMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string, data: Partial<Omit<Income, 'id' | 'businessId' | 'createdAt'>> }) => {
+      return updateIncome(id, data);
+    },
+    onSuccess: () => {
+      // Invalidate and refetch incomes
+      queryClient.invalidateQueries({ queryKey: ['incomes', businessId, resolvedId] });
+      
+      // Show success notification
+      toast.success("Pendapatan berhasil diperbarui!");
+    },
+    onError: (error) => {
+      console.error("Error updating income:", error);
+      toast.error("Gagal memperbarui pendapatan. Silahkan coba lagi.");
+    },
+  });
+
+  // Delete income mutation
+  const deleteIncomeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return deleteIncome(id);
+    },
+    onSuccess: () => {
+      // Invalidate and refetch incomes
+      queryClient.invalidateQueries({ queryKey: ['incomes', businessId, resolvedId] });
+      
+      // Show success notification
+      toast.success("Pendapatan berhasil dihapus!");
+    },
+    onError: (error) => {
+      console.error("Error deleting income:", error);
+      toast.error("Gagal menghapus pendapatan. Silahkan coba lagi.");
+    },
+  });
+
   return {
     incomes,
     isLoading: isResolvingBusiness || isLoadingIncomes,
     error,
     addIncome: addIncomeMutation.mutate,
-    isPending: addIncomeMutation.isPending
+    updateIncome: updateIncomeMutation.mutate,
+    deleteIncome: deleteIncomeMutation.mutate,
+    isPending: addIncomeMutation.isPending || updateIncomeMutation.isPending || deleteIncomeMutation.isPending
   };
 };

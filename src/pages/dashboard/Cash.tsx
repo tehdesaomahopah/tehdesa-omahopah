@@ -4,173 +4,29 @@ import { useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Income, Expense } from "@/types/business";
-import { format, isWithinInterval, startOfMonth, endOfMonth, subMonths } from "date-fns";
-import { ArrowUpCircle, ArrowDownCircle, TrendingUp, Wallet } from "lucide-react";
-
-// Dummy data for incomes and expenses (reusing from other components)
-const dummyIncomes: Income[] = [
-  { 
-    id: "1", 
-    businessId: "cijati", 
-    date: new Date(2023, 5, 15), 
-    type: "Omset Usaha", 
-    description: "Penjualan Toko", 
-    amount: 850000 
-  },
-  { 
-    id: "2", 
-    businessId: "cijati", 
-    date: new Date(2023, 5, 13), 
-    type: "Konsinyasi Usaha", 
-    description: "Konsinyasi Toko Jaya", 
-    amount: 540000 
-  },
-  { 
-    id: "3", 
-    businessId: "cijati", 
-    date: new Date(2023, 5, 10), 
-    type: "Omset Usaha", 
-    description: "Penjualan Online", 
-    amount: 320000 
-  },
-  { 
-    id: "4", 
-    businessId: "shaquilla", 
-    date: new Date(2023, 5, 15), 
-    type: "Omset Usaha", 
-    description: "Penjualan Toko", 
-    amount: 750000 
-  },
-  { 
-    id: "5", 
-    businessId: "kartini", 
-    date: new Date(2023, 5, 14), 
-    type: "Lainnya", 
-    description: "Keuntungan Investasi", 
-    amount: 250000 
-  },
-];
-
-const dummyExpenses: Expense[] = [
-  { 
-    id: "1", 
-    businessId: "cijati", 
-    date: new Date(2023, 5, 14), 
-    type: "Belanja Bahan", 
-    description: "Pembelian teh", 
-    amount: 350000 
-  },
-  { 
-    id: "2", 
-    businessId: "cijati", 
-    date: new Date(2023, 5, 12), 
-    type: "Upah Pegawai", 
-    description: "Gaji pegawai", 
-    amount: 450000 
-  },
-  { 
-    id: "3", 
-    businessId: "cijati", 
-    date: new Date(2023, 5, 8), 
-    type: "Marketing", 
-    description: "Promosi online", 
-    amount: 100000 
-  },
-  { 
-    id: "4", 
-    businessId: "shaquilla", 
-    date: new Date(2023, 5, 13), 
-    type: "Maintenance", 
-    description: "Perbaikan mesin", 
-    amount: 200000 
-  },
-  { 
-    id: "5", 
-    businessId: "kartini", 
-    date: new Date(2023, 5, 11), 
-    type: "Bagi Hasil", 
-    description: "Pembagian hasil usaha", 
-    amount: 300000 
-  },
-];
+import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import { ArrowUpCircle, ArrowDownCircle, Wallet, Loader2 } from "lucide-react";
+import { useCashData } from "@/hooks/cash/useCashData";
+import { useBusinessResolver } from "@/hooks/business/useBusinessResolver";
 
 const CashSummary = () => {
   const { businessId } = useParams<{ businessId: string }>();
-  
+  const { business, isLoading: isLoadingBusiness } = useBusinessResolver(businessId);
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
   
-  // Get month range for filtering
-  const monthStart = startOfMonth(selectedMonth);
-  const monthEnd = endOfMonth(selectedMonth);
+  // Use the cash data hook to get all cash flow related data
+  const {
+    isLoading: isLoadingCashData,
+    error,
+    totalIncome,
+    totalExpense,
+    balance,
+    incomeByType,
+    expenseByType,
+    recentTransactions
+  } = useCashData(businessId, selectedMonth);
 
-  // Filter transactions for the selected business and month
-  const filteredIncomes = useMemo(() => {
-    return dummyIncomes.filter(
-      (income) => 
-        income.businessId === businessId &&
-        isWithinInterval(income.date, { start: monthStart, end: monthEnd })
-    );
-  }, [businessId, monthStart, monthEnd]);
-
-  const filteredExpenses = useMemo(() => {
-    return dummyExpenses.filter(
-      (expense) => 
-        expense.businessId === businessId &&
-        isWithinInterval(expense.date, { start: monthStart, end: monthEnd })
-    );
-  }, [businessId, monthStart, monthEnd]);
-
-  // Calculate totals
-  const totalIncome = useMemo(() => {
-    return filteredIncomes.reduce((sum, income) => sum + income.amount, 0);
-  }, [filteredIncomes]);
-
-  const totalExpense = useMemo(() => {
-    return filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-  }, [filteredExpenses]);
-
-  const balance = totalIncome - totalExpense;
-
-  // Group incomes by type
-  const incomeByType = useMemo(() => {
-    return filteredIncomes.reduce((acc, income) => {
-      if (!acc[income.type]) {
-        acc[income.type] = 0;
-      }
-      acc[income.type] += income.amount;
-      return acc;
-    }, {} as Record<string, number>);
-  }, [filteredIncomes]);
-
-  // Group expenses by type
-  const expenseByType = useMemo(() => {
-    return filteredExpenses.reduce((acc, expense) => {
-      if (!acc[expense.type]) {
-        acc[expense.type] = 0;
-      }
-      acc[expense.type] += expense.amount;
-      return acc;
-    }, {} as Record<string, number>);
-  }, [filteredExpenses]);
-
-  // Recent transactions (combined and sorted)
-  const recentTransactions = useMemo(() => {
-    const incomes = filteredIncomes.map(income => ({
-      ...income,
-      transactionType: 'income' as const
-    }));
-    
-    const expenses = filteredExpenses.map(expense => ({
-      ...expense,
-      transactionType: 'expense' as const
-    }));
-    
-    return [...incomes, ...expenses].sort((a, b) => 
-      b.date.getTime() - a.date.getTime()
-    ).slice(0, 5);
-  }, [filteredIncomes, filteredExpenses]);
+  const isLoading = isLoadingBusiness || isLoadingCashData;
 
   const handlePreviousMonth = () => {
     setSelectedMonth(prevMonth => subMonths(prevMonth, 1));
@@ -180,11 +36,37 @@ const CashSummary = () => {
     setSelectedMonth(prevMonth => subMonths(prevMonth, -1));
   };
 
+  // Get month range for display
+  const monthStart = startOfMonth(selectedMonth);
+  const monthEnd = endOfMonth(selectedMonth);
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-[80vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+          <p>Memuat data kas...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error</h2>
+          <p className="text-gray-700">{error.message}</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">KasKu</h1>
-        <p className="text-gray-600">Ringkasan kas untuk usaha Anda</p>
+        <p className="text-gray-600">Ringkasan kas untuk usaha {business?.name || businessId}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

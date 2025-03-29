@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -8,11 +9,13 @@ import { ArrowUpCircle, ArrowDownCircle, Wallet, Loader2 } from "lucide-react";
 import { useCashData } from "@/hooks/cash/useCashData";
 import { useBusinessResolver } from "@/hooks/business/useBusinessResolver";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const CashSummary = () => {
   const { businessId } = useParams<{ businessId: string }>();
   const { business, isLoading: isLoadingBusiness } = useBusinessResolver(businessId);
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+  const isMobile = useIsMobile();
   
   const {
     isLoading: isLoadingCashData,
@@ -72,7 +75,7 @@ const CashSummary = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card className="md:col-span-2">
           <CardHeader className="pb-2">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
               <CardTitle>Ringkasan Kas</CardTitle>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" onClick={handlePreviousMonth}>
@@ -129,10 +132,7 @@ const CashSummary = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-500">Saldo</p>
-                      <p className={cn(
-                        "text-2xl font-bold",
-                        isPositiveBalance ? "text-blue-600" : "text-red-600"
-                      )}>
+                      <p className={isPositiveBalance ? "text-2xl font-bold text-blue-600" : "text-2xl font-bold text-red-600"}>
                         Rp {balance.toLocaleString('id-ID')}
                       </p>
                     </div>

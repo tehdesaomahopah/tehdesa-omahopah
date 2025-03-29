@@ -8,15 +8,17 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { CalendarIcon, FileDown, Loader2 } from "lucide-react";
+import { CalendarIcon, FileDown, Loader2, Pencil, Trash2 } from "lucide-react";
 import { format, isWithinInterval, startOfMonth, endOfMonth } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { getBusinesses, getIncomesByDateRange, getExpensesByDateRange } from "@/services/businessService";
 import { Business, Income, Expense } from "@/types/supabase";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const FinancialReports = () => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [selectedBusiness, setSelectedBusiness] = useState<string>("all");
   const [dateRange, setDateRange] = useState<{
     from: Date;
@@ -98,6 +100,21 @@ const FinancialReports = () => {
     expense: expenseByBusiness[business.id] || 0,
     balance: (incomeByBusiness[business.id] || 0) - (expenseByBusiness[business.id] || 0),
   }));
+  
+  // Mock handlers for edit and delete functionality
+  const handleEdit = (id: string, type: 'income' | 'expense') => {
+    toast({
+      title: `Edit ${type === 'income' ? 'Pendapatan' : 'Pengeluaran'}`,
+      description: `Mengedit item dengan ID: ${id}`,
+    });
+  };
+  
+  const handleDelete = (id: string, type: 'income' | 'expense') => {
+    toast({
+      title: `Hapus ${type === 'income' ? 'Pendapatan' : 'Pengeluaran'}`,
+      description: `Menghapus item dengan ID: ${id}`,
+    });
+  };
   
   // Function to download report as CSV
   const handleDownloadReport = () => {
@@ -258,106 +275,107 @@ const FinancialReports = () => {
           <span className="ml-2 text-xl text-gray-600">Memuat data...</span>
         </div>
       ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Ringkasan Keuangan</CardTitle>
-                <CardDescription>
-                  Periode {format(dateRange.from, "d MMMM yyyy")} - {format(dateRange.to, "d MMMM yyyy")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={chartData}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => `Rp ${value.toLocaleString('id-ID')}`} />
-                      <Legend />
-                      <Bar dataKey="amount" fill="#10B981" />
-                    </BarChart>
-                  </ResponsiveContainer>
+        <div className="space-y-8">
+          {/* Financial Summary Card - Full Width */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Ringkasan Keuangan</CardTitle>
+              <CardDescription>
+                Periode {format(dateRange.from, "d MMMM yyyy")} - {format(dateRange.to, "d MMMM yyyy")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={chartData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => `Rp ${value.toLocaleString('id-ID')}`} />
+                    <Legend />
+                    <Bar dataKey="amount" fill="#10B981" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+                <div className="text-center p-3 bg-green-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-600">Total Pendapatan</p>
+                  <p className="text-xl font-bold text-green-600">
+                    Rp {totalIncome.toLocaleString('id-ID')}
+                  </p>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-4 mt-6">
-                  <div className="text-center p-3 bg-green-50 rounded-lg">
-                    <p className="text-sm font-medium text-gray-600">Total Pendapatan</p>
-                    <p className="text-xl font-bold text-green-600">
-                      Rp {totalIncome.toLocaleString('id-ID')}
-                    </p>
-                  </div>
-                  
-                  <div className="text-center p-3 bg-red-50 rounded-lg">
-                    <p className="text-sm font-medium text-gray-600">Total Pengeluaran</p>
-                    <p className="text-xl font-bold text-red-600">
-                      Rp {totalExpense.toLocaleString('id-ID')}
-                    </p>
-                  </div>
-                  
-                  <div className={`text-center p-3 rounded-lg ${balance >= 0 ? 'bg-blue-50' : 'bg-red-50'}`}>
-                    <p className="text-sm font-medium text-gray-600">Saldo</p>
-                    <p className={`text-xl font-bold ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                      Rp {balance.toLocaleString('id-ID')}
-                    </p>
-                  </div>
+                <div className="text-center p-3 bg-red-50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-600">Total Pengeluaran</p>
+                  <p className="text-xl font-bold text-red-600">
+                    Rp {totalExpense.toLocaleString('id-ID')}
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Ringkasan per Usaha</CardTitle>
-                <CardDescription>Performa masing-masing usaha</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Usaha</TableHead>
-                        <TableHead className="text-right">Pendapatan</TableHead>
-                        <TableHead className="text-right">Pengeluaran</TableHead>
-                        <TableHead className="text-right">Saldo</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {businessSummary.length > 0 ? (
-                        businessSummary.map((business) => (
-                          <TableRow key={business.id}>
-                            <TableCell className="font-medium">{business.name}</TableCell>
-                            <TableCell className="text-right text-green-600">
-                              Rp {business.income.toLocaleString('id-ID')}
-                            </TableCell>
-                            <TableCell className="text-right text-red-600">
-                              Rp {business.expense.toLocaleString('id-ID')}
-                            </TableCell>
-                            <TableCell className={cn(
-                              "text-right font-medium",
-                              business.balance >= 0 ? "text-blue-600" : "text-red-600"
-                            )}>
-                              Rp {business.balance.toLocaleString('id-ID')}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center py-6 text-gray-500">
-                            Tidak ada data usaha.
+                
+                <div className={`text-center p-3 rounded-lg ${balance >= 0 ? 'bg-blue-50' : 'bg-red-50'}`}>
+                  <p className="text-sm font-medium text-gray-600">Saldo</p>
+                  <p className={`text-xl font-bold ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                    Rp {balance.toLocaleString('id-ID')}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Business Summary Card - Full Width */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Ringkasan per Usaha</CardTitle>
+              <CardDescription>Performa masing-masing usaha</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Usaha</TableHead>
+                      <TableHead className="text-right">Pendapatan</TableHead>
+                      <TableHead className="text-right">Pengeluaran</TableHead>
+                      <TableHead className="text-right">Saldo</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {businessSummary.length > 0 ? (
+                      businessSummary.map((business) => (
+                        <TableRow key={business.id}>
+                          <TableCell className="font-medium">{business.name}</TableCell>
+                          <TableCell className="text-right text-green-600">
+                            Rp {business.income.toLocaleString('id-ID')}
+                          </TableCell>
+                          <TableCell className="text-right text-red-600">
+                            Rp {business.expense.toLocaleString('id-ID')}
+                          </TableCell>
+                          <TableCell className={cn(
+                            "text-right font-medium",
+                            business.balance >= 0 ? "text-blue-600" : "text-red-600"
+                          )}>
+                            Rp {business.balance.toLocaleString('id-ID')}
                           </TableCell>
                         </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-6 text-gray-500">
+                          Tidak ada data usaha.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
 
+          {/* Detailed Transactions Card - Full Width */}
           <Card>
             <CardHeader>
               <CardTitle>Laporan Transaksi Detail</CardTitle>
@@ -366,7 +384,7 @@ const FinancialReports = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -376,6 +394,7 @@ const FinancialReports = () => {
                       <TableHead>Deskripsi</TableHead>
                       <TableHead>Tipe</TableHead>
                       <TableHead className="text-right">Nominal</TableHead>
+                      <TableHead className="text-center">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -410,12 +429,32 @@ const FinancialReports = () => {
                             <TableCell className={`text-right font-medium ${transaction.transactionType === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                               {transaction.transactionType === 'income' ? '+' : '-'} Rp {transaction.amount.toLocaleString('id-ID')}
                             </TableCell>
+                            <TableCell>
+                              <div className="flex justify-center gap-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={() => handleEdit(transaction.id, transaction.transactionType)}
+                                  className="h-8 w-8 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={() => handleDelete(transaction.id, transaction.transactionType)}
+                                  className="h-8 w-8 text-red-600 hover:text-red-800 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
                           </TableRow>
                         );
                       })}
                     {(incomes.length + expenses.length) === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-6 text-gray-500">
+                        <TableCell colSpan={7} className="text-center py-6 text-gray-500">
                           Tidak ada data transaksi untuk filter yang dipilih.
                         </TableCell>
                       </TableRow>
@@ -425,7 +464,7 @@ const FinancialReports = () => {
               </div>
             </CardContent>
           </Card>
-        </>
+        </div>
       )}
     </DashboardLayout>
   );

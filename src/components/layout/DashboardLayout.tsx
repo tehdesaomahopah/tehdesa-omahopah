@@ -2,16 +2,15 @@
 import React from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { 
-  Home, 
   ArrowUpCircle, 
   ArrowDownCircle, 
   Wallet, 
   FileText, 
-  BarChart3,
   ChevronLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -20,6 +19,7 @@ interface DashboardLayoutProps {
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { businessId } = useParams<{ businessId: string }>();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const getBusinessName = (id: string) => {
     switch (id) {
@@ -35,11 +35,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   };
 
   const navigationItems = [
-    { 
-      icon: Home, 
-      label: "Dashboard", 
-      href: `/dashboard/${businessId}` 
-    },
     { 
       icon: ArrowUpCircle, 
       label: "Pendapatan", 

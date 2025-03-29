@@ -53,8 +53,6 @@ const CashSummary = () => {
     }
   };
 
-  // ... keep existing code (loading and error handling UI)
-
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -86,7 +84,6 @@ const CashSummary = () => {
         <p className="text-gray-600">Ringkasan kas untuk usaha {business?.name || businessId}</p>
       </div>
 
-      {/* ... keep existing code (Summary Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8 w-full">
         <Card className="border-green-100">
           <CardContent className="p-4">
@@ -194,7 +191,6 @@ const CashSummary = () => {
         </CardHeader>
       </Card>
 
-      {/* ... keep existing code (Income Category Table) */}
       <Card className="mb-8 w-full">
         <CardHeader>
           <CardTitle>Pendapatan per Kategori</CardTitle>
@@ -228,7 +224,6 @@ const CashSummary = () => {
         </CardContent>
       </Card>
 
-      {/* ... keep existing code (Expense Category Table) */}
       <Card className="mb-8 w-full">
         <CardHeader>
           <CardTitle>Pengeluaran per Kategori</CardTitle>
@@ -262,7 +257,6 @@ const CashSummary = () => {
         </CardContent>
       </Card>
 
-      {/* ... keep existing code (Recent Transactions) */}
       <Card className="w-full">
         <CardHeader>
           <CardTitle>Transaksi Terbaru</CardTitle>

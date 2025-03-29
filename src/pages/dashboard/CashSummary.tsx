@@ -41,7 +41,7 @@ const CashSummary = () => {
 
   const isLoading = isLoadingBusiness || isLoadingCashData;
 
-  // Date setter functions that work with Calendar's onSelect
+  // Fixed date setter functions that correctly handle date selection
   const handleFromDateChange = (date: Date | undefined) => {
     if (date) {
       setDateRange(prev => ({ ...prev, from: date }));

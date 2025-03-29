@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format, startOfDay, endOfDay, isWithinInterval } from "date-fns";
+import { format } from "date-fns";
 import { ArrowUpCircle, ArrowDownCircle, Wallet, Loader2, CalendarIcon } from "lucide-react";
 import { useCashData } from "@/hooks/cash/useCashData";
 import { useBusinessResolver } from "@/hooks/business/useBusinessResolver";
@@ -40,6 +40,23 @@ const CashSummary = () => {
   } = useCashData(businessId, dateRange.from, dateRange.to);
 
   const isLoading = isLoadingBusiness || isLoadingCashData;
+
+  // Date setter functions that don't take arguments to fix TypeScript errors
+  function handleFromDateChange() {
+    return function(date: Date | undefined) {
+      if (date) {
+        setDateRange(prev => ({ ...prev, from: date }));
+      }
+    };
+  }
+
+  function handleToDateChange() {
+    return function(date: Date | undefined) {
+      if (date) {
+        setDateRange(prev => ({ ...prev, to: date }));
+      }
+    };
+  }
 
   if (isLoading) {
     return (
@@ -145,7 +162,7 @@ const CashSummary = () => {
                     <Calendar
                       mode="single"
                       selected={dateRange.from}
-                      onSelect={setDate}
+                      onSelect={handleFromDateChange()}
                       initialFocus
                     />
                   </PopoverContent>
@@ -166,7 +183,7 @@ const CashSummary = () => {
                     <Calendar
                       mode="single"
                       selected={dateRange.to}
-                      onSelect={setToDate}
+                      onSelect={handleToDateChange()}
                       initialFocus
                     />
                   </PopoverContent>
@@ -288,19 +305,6 @@ const CashSummary = () => {
       </Card>
     </DashboardLayout>
   );
-
-  // Date setter functions to fix TypeScript errors
-  function setDate(date: Date | undefined) {
-    if (date) {
-      setDateRange(prev => ({ ...prev, from: date }));
-    }
-  }
-
-  function setToDate(date: Date | undefined) {
-    if (date) {
-      setDateRange(prev => ({ ...prev, to: date }));
-    }
-  }
 };
 
 export default CashSummary;

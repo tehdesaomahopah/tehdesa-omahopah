@@ -23,7 +23,6 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/dashboard/:businessId" element={<CashSummary />} />
             <Route path="/dashboard/:businessId/income" element={<Income />} />
             <Route path="/dashboard/:businessId/expense" element={<Expense />} />
             <Route path="/dashboard/:businessId/cash" element={<CashSummary />} />

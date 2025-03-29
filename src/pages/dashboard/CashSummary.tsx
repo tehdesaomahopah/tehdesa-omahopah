@@ -40,7 +40,7 @@ const CashSummary = () => {
 
   const isLoading = isLoadingBusiness || isLoadingCashData;
 
-  // Correctly implemented date setter functions that accept Date | undefined parameter
+  // Date setter functions that correctly handle Date | undefined parameter
   const handleFromDateChange = (date: Date | undefined) => {
     if (date) {
       setDateRange(prev => ({ ...prev, from: date }));
@@ -52,6 +52,8 @@ const CashSummary = () => {
       setDateRange(prev => ({ ...prev, to: date }));
     }
   };
+
+  // ... keep existing code (loading and error handling UI)
 
   if (isLoading) {
     return (
@@ -84,7 +86,7 @@ const CashSummary = () => {
         <p className="text-gray-600">Ringkasan kas untuk usaha {business?.name || businessId}</p>
       </div>
 
-      {/* Summary Cards with full width */}
+      {/* ... keep existing code (Summary Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8 w-full">
         <Card className="border-green-100">
           <CardContent className="p-4">
@@ -192,7 +194,7 @@ const CashSummary = () => {
         </CardHeader>
       </Card>
 
-      {/* Income Category Table - Full Width */}
+      {/* ... keep existing code (Income Category Table) */}
       <Card className="mb-8 w-full">
         <CardHeader>
           <CardTitle>Pendapatan per Kategori</CardTitle>
@@ -226,7 +228,7 @@ const CashSummary = () => {
         </CardContent>
       </Card>
 
-      {/* Expense Category Table - Full Width */}
+      {/* ... keep existing code (Expense Category Table) */}
       <Card className="mb-8 w-full">
         <CardHeader>
           <CardTitle>Pengeluaran per Kategori</CardTitle>
@@ -260,7 +262,7 @@ const CashSummary = () => {
         </CardContent>
       </Card>
 
-      {/* Recent Transactions - Full Width */}
+      {/* ... keep existing code (Recent Transactions) */}
       <Card className="w-full">
         <CardHeader>
           <CardTitle>Transaksi Terbaru</CardTitle>

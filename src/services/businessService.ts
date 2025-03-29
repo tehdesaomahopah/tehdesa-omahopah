@@ -15,6 +15,28 @@ const isValidUUID = (id: string): boolean => {
   return uuidRegex.test(id);
 };
 
+// Helper to get business by name
+export async function getBusinessByName(name: string): Promise<Business | null> {
+  // Remove "Teh Desa " prefix if present to match with names like "shaquilla" vs "Teh Desa Shaquilla"
+  const searchName = name.replace(/^Teh Desa /i, "");
+  
+  const { data, error } = await supabase
+    .from('businesses')
+    .select('*')
+    .ilike('name', `%${searchName}%`)
+    .single();
+    
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null; // No data found
+    }
+    console.error("Error fetching business by name:", error);
+    throw error;
+  }
+  
+  return mapBusinessFromRow(data);
+}
+
 export async function getBusinesses(): Promise<Business[]> {
   const { data, error } = await supabase
     .from('businesses')
@@ -31,7 +53,8 @@ export async function getBusinesses(): Promise<Business[]> {
 export async function getBusinessById(id: string): Promise<Business | null> {
   if (!isValidUUID(id)) {
     console.warn(`Invalid business ID format: ${id}`);
-    return null;
+    // Try to get business by name instead
+    return getBusinessByName(id);
   }
 
   const { data, error } = await supabase
@@ -52,9 +75,14 @@ export async function getBusinessById(id: string): Promise<Business | null> {
 }
 
 export async function getIncomesByBusinessId(businessId: string): Promise<Income[]> {
+  // If not a valid UUID, try to get the business first
   if (!isValidUUID(businessId)) {
-    console.warn(`Invalid business ID format: ${businessId}`);
-    return [];
+    const business = await getBusinessByName(businessId);
+    if (!business) {
+      console.warn(`Business not found with name: ${businessId}`);
+      return [];
+    }
+    businessId = business.id;
   }
 
   const { data, error } = await supabase
@@ -71,9 +99,14 @@ export async function getIncomesByBusinessId(businessId: string): Promise<Income
 }
 
 export async function getExpensesByBusinessId(businessId: string): Promise<Expense[]> {
+  // If not a valid UUID, try to get the business first
   if (!isValidUUID(businessId)) {
-    console.warn(`Invalid business ID format: ${businessId}`);
-    return [];
+    const business = await getBusinessByName(businessId);
+    if (!business) {
+      console.warn(`Business not found with name: ${businessId}`);
+      return [];
+    }
+    businessId = business.id;
   }
 
   const { data, error } = await supabase
@@ -96,8 +129,13 @@ export async function addIncome(income: {
   description: string;
   amount: number;
 }): Promise<Income> {
+  // If not a valid UUID, try to get the business first
   if (!isValidUUID(income.businessId)) {
-    throw new Error(`Invalid business ID format: ${income.businessId}`);
+    const business = await getBusinessByName(income.businessId);
+    if (!business) {
+      throw new Error(`Business not found with name: ${income.businessId}`);
+    }
+    income.businessId = business.id;
   }
 
   const { data, error } = await supabase
@@ -127,8 +165,13 @@ export async function addExpense(expense: {
   description: string;
   amount: number;
 }): Promise<Expense> {
+  // If not a valid UUID, try to get the business first
   if (!isValidUUID(expense.businessId)) {
-    throw new Error(`Invalid business ID format: ${expense.businessId}`);
+    const business = await getBusinessByName(expense.businessId);
+    if (!business) {
+      throw new Error(`Business not found with name: ${expense.businessId}`);
+    }
+    expense.businessId = business.id;
   }
 
   const { data, error } = await supabase
@@ -158,8 +201,19 @@ export async function getIncomesByDateRange(from: Date, to: Date, businessId?: s
     .gte('date', from.toISOString())
     .lte('date', to.toISOString());
     
-  if (businessId && businessId !== 'all' && isValidUUID(businessId)) {
-    query = query.eq('business_id', businessId);
+  if (businessId) {
+    if (businessId !== 'all') {
+      // If not a valid UUID, try to get the business first
+      if (!isValidUUID(businessId)) {
+        const business = await getBusinessByName(businessId);
+        if (business) {
+          businessId = business.id;
+        } else {
+          return []; // No business found
+        }
+      }
+      query = query.eq('business_id', businessId);
+    }
   }
     
   const { data, error } = await query;
@@ -179,8 +233,19 @@ export async function getExpensesByDateRange(from: Date, to: Date, businessId?: 
     .gte('date', from.toISOString())
     .lte('date', to.toISOString());
     
-  if (businessId && businessId !== 'all' && isValidUUID(businessId)) {
-    query = query.eq('business_id', businessId);
+  if (businessId) {
+    if (businessId !== 'all') {
+      // If not a valid UUID, try to get the business first
+      if (!isValidUUID(businessId)) {
+        const business = await getBusinessByName(businessId);
+        if (business) {
+          businessId = business.id;
+        } else {
+          return []; // No business found
+        }
+      }
+      query = query.eq('business_id', businessId);
+    }
   }
     
   const { data, error } = await query;

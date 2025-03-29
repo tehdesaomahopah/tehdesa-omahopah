@@ -3,17 +3,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Expense } from "@/types/supabase";
 import { getExpensesByBusinessId, addExpense } from "@/services/businessService";
+import { useBusinessResolver } from "@/hooks/business/useBusinessResolver";
 
 export const useExpenseData = (businessId: string | undefined) => {
   const queryClient = useQueryClient();
+  const { resolvedId, isLoading: isResolvingBusiness } = useBusinessResolver(businessId);
 
   // Fetch expenses data from Supabase
   const { 
     data: expenses = [], 
-    isLoading, 
+    isLoading: isLoadingExpenses, 
     error 
   } = useQuery({
-    queryKey: ['expenses', businessId],
+    queryKey: ['expenses', businessId, resolvedId],
     queryFn: () => businessId ? getExpensesByBusinessId(businessId) : Promise.resolve([]),
     enabled: !!businessId,
   });
@@ -25,7 +27,7 @@ export const useExpenseData = (businessId: string | undefined) => {
     },
     onSuccess: () => {
       // Invalidate and refetch expenses
-      queryClient.invalidateQueries({ queryKey: ['expenses', businessId] });
+      queryClient.invalidateQueries({ queryKey: ['expenses', businessId, resolvedId] });
       
       // Show success notification
       toast.success("Pengeluaran berhasil ditambahkan!");
@@ -38,7 +40,7 @@ export const useExpenseData = (businessId: string | undefined) => {
 
   return {
     expenses,
-    isLoading,
+    isLoading: isResolvingBusiness || isLoadingExpenses,
     error,
     addExpense: addExpenseMutation.mutate,
     isPending: addExpenseMutation.isPending

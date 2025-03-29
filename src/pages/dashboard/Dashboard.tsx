@@ -1,57 +1,208 @@
-import React from "react";
+
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useParams } from "react-router-dom";
 import { BarChart, LineChart, PieChart } from "@/components/ui/charts";
-import { ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { ArrowUpCircle, ArrowDownCircle, Loader2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { 
+  getIncomesByDateRange, 
+  getExpensesByDateRange, 
+  getBusinessByName 
+} from "@/services/businessService";
+import { Business, Income, Expense } from "@/types/supabase";
+import { subMonths, startOfMonth, endOfMonth, format } from "date-fns";
 
 const Dashboard = () => {
   const { businessId } = useParams<{ businessId: string }>();
+  const [business, setBusiness] = useState<Business | null>(null);
+  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  // Dummy data for demonstration
-  const incomeData = [
-    { name: "Jan", value: 2400 },
-    { name: "Feb", value: 1398 },
-    { name: "Mar", value: 3200 },
-    { name: "Apr", value: 2780 },
-    { name: "May", value: 1890 },
-    { name: "Jun", value: 2390 },
-    { name: "Jul", value: 3490 },
-  ];
+  const toDate = endOfMonth(new Date());
+  const fromDate = startOfMonth(subMonths(toDate, 6));
 
-  const expenseData = [
-    { name: "Jan", value: 1400 },
-    { name: "Feb", value: 2398 },
-    { name: "Mar", value: 1200 },
-    { name: "Apr", value: 1780 },
-    { name: "May", value: 2890 },
-    { name: "Jun", value: 1390 },
-    { name: "Jul", value: 2490 },
-  ];
+  // Format the data for charts
+  const [chartData, setChartData] = useState({
+    income: [] as any[],
+    expense: [] as any[],
+    cashFlow: [] as any[],
+    summary: [] as any[]
+  });
 
-  const cashFlowData = [
-    { name: "Jan", income: 2400, expense: 1400 },
-    { name: "Feb", income: 1398, expense: 2398 },
-    { name: "Mar", income: 3200, expense: 1200 },
-    { name: "Apr", income: 2780, expense: 1780 },
-    { name: "May", income: 1890, expense: 2890 },
-    { name: "Jun", income: 2390, expense: 1390 },
-    { name: "Jul", income: 3490, expense: 2490 },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch business info if we have a name instead of ID
+        let businessIdToUse = businessId;
+        if (businessId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(businessId)) {
+          const businessData = await getBusinessByName(businessId);
+          if (businessData) {
+            setBusiness(businessData);
+            businessIdToUse = businessData.id;
+          }
+        }
 
-  const pieChartData = [
-    { name: "Income", value: 2400 },
-    { name: "Expense", value: 1398 },
-    { name: "Cash", value: 3200 },
-  ];
+        // Fetch incomes and expenses data
+        const [incomesData, expensesData] = await Promise.all([
+          getIncomesByDateRange(fromDate, toDate, businessIdToUse),
+          getExpensesByDateRange(fromDate, toDate, businessIdToUse)
+        ]);
+
+        setIncomes(incomesData);
+        setExpenses(expensesData);
+
+        // Process data for charts
+        const monthsMap = new Map();
+        for (let i = 0; i <= 6; i++) {
+          const date = subMonths(toDate, i);
+          const monthKey = format(date, 'MMM');
+          monthsMap.set(monthKey, { income: 0, expense: 0 });
+        }
+
+        // Aggregate income data by month
+        incomesData.forEach(income => {
+          const monthKey = format(new Date(income.date), 'MMM');
+          if (monthsMap.has(monthKey)) {
+            const monthData = monthsMap.get(monthKey);
+            monthData.income += Number(income.amount);
+            monthsMap.set(monthKey, monthData);
+          }
+        });
+
+        // Aggregate expense data by month
+        expensesData.forEach(expense => {
+          const monthKey = format(new Date(expense.date), 'MMM');
+          if (monthsMap.has(monthKey)) {
+            const monthData = monthsMap.get(monthKey);
+            monthData.expense += Number(expense.amount);
+            monthsMap.set(monthKey, monthData);
+          }
+        });
+
+        // Convert to arrays for charts
+        const incomeData: any[] = [];
+        const expenseData: any[] = [];
+        const cashFlowData: any[] = [];
+        
+        // Reverse to show from oldest to newest
+        const sortedMonths = Array.from(monthsMap.entries()).reverse();
+        
+        sortedMonths.forEach(([month, data]) => {
+          incomeData.push({ name: month, value: data.income });
+          expenseData.push({ name: month, value: data.expense });
+          cashFlowData.push({ 
+            name: month, 
+            income: data.income, 
+            expense: data.expense 
+          });
+        });
+
+        // Calculate totals for summary pie chart
+        const totalIncome = incomesData.reduce((sum, item) => sum + Number(item.amount), 0);
+        const totalExpense = expensesData.reduce((sum, item) => sum + Number(item.amount), 0);
+        const netCash = totalIncome - totalExpense;
+
+        const summaryData = [
+          { name: 'Pendapatan', value: totalIncome },
+          { name: 'Pengeluaran', value: totalExpense },
+          { name: 'Kas Bersih', value: netCash > 0 ? netCash : 0 }
+        ];
+
+        setChartData({
+          income: incomeData,
+          expense: expenseData,
+          cashFlow: cashFlowData,
+          summary: summaryData
+        });
+
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        setError(err instanceof Error ? err : new Error('Unknown error'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (businessId) {
+      fetchData();
+    }
+  }, [businessId, fromDate, toDate]);
+
+  // Calculate total income, expense, and net cash
+  const totalIncome = incomes.reduce((sum, income) => sum + Number(income.amount), 0);
+  const totalExpense = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const netCash = totalIncome - totalExpense;
+
+  // Calculate month-over-month change
+  const lastMonthIncomes = incomes.filter(income => {
+    const incomeDate = new Date(income.date);
+    return incomeDate >= startOfMonth(subMonths(new Date(), 1)) && 
+           incomeDate <= endOfMonth(subMonths(new Date(), 1));
+  });
+  
+  const twoMonthsAgoIncomes = incomes.filter(income => {
+    const incomeDate = new Date(income.date);
+    return incomeDate >= startOfMonth(subMonths(new Date(), 2)) && 
+           incomeDate <= endOfMonth(subMonths(new Date(), 2));
+  });
+
+  const lastMonthExpenses = expenses.filter(expense => {
+    const expenseDate = new Date(expense.date);
+    return expenseDate >= startOfMonth(subMonths(new Date(), 1)) && 
+           expenseDate <= endOfMonth(subMonths(new Date(), 1));
+  });
+  
+  const twoMonthsAgoExpenses = expenses.filter(expense => {
+    const expenseDate = new Date(expense.date);
+    return expenseDate >= startOfMonth(subMonths(new Date(), 2)) && 
+           expenseDate <= endOfMonth(subMonths(new Date(), 2));
+  });
+
+  const lastMonthTotalIncome = lastMonthIncomes.reduce((sum, income) => sum + Number(income.amount), 0);
+  const twoMonthsAgoTotalIncome = twoMonthsAgoIncomes.reduce((sum, income) => sum + Number(income.amount), 0);
+  const incomeChangePercent = twoMonthsAgoTotalIncome === 0 
+    ? 100 
+    : Math.round((lastMonthTotalIncome - twoMonthsAgoTotalIncome) / twoMonthsAgoTotalIncome * 100);
+
+  const lastMonthTotalExpense = lastMonthExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const twoMonthsAgoTotalExpense = twoMonthsAgoExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const expenseChangePercent = twoMonthsAgoTotalExpense === 0
+    ? 0
+    : Math.round((lastMonthTotalExpense - twoMonthsAgoTotalExpense) / twoMonthsAgoTotalExpense * 100);
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-[80vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+          <p>Memuat data dashboard...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error</h2>
+          <p className="text-gray-700">{error.message}</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
       <div className="container mx-auto py-8">
         <header className="mb-6">
-          <h1 className="text-3xl font-semibold text-gray-800">Dashboard - {businessId}</h1>
+          <h1 className="text-3xl font-semibold text-gray-800">Dashboard - {business?.name || businessId}</h1>
           <p className="text-gray-500">Selamat datang di dashboard keuangan Anda.</p>
         </header>
 
@@ -71,10 +222,16 @@ const Dashboard = () => {
                   <CardDescription>Ringkasan pendapatan keseluruhan</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600">Rp 12,500,000</div>
-                  <div className="flex items-center text-sm text-green-500 mt-2">
-                    <ArrowUpCircle className="h-4 w-4 mr-1" />
-                    <span>+12% dari bulan lalu</span>
+                  <div className="text-2xl font-bold text-green-600">Rp {totalIncome.toLocaleString('id-ID')}</div>
+                  <div className="flex items-center text-sm mt-2">
+                    {incomeChangePercent >= 0 ? (
+                      <ArrowUpCircle className="h-4 w-4 mr-1 text-green-500" />
+                    ) : (
+                      <ArrowDownCircle className="h-4 w-4 mr-1 text-red-500" />
+                    )}
+                    <span className={incomeChangePercent >= 0 ? "text-green-500" : "text-red-500"}>
+                      {incomeChangePercent}% dari bulan lalu
+                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -85,10 +242,16 @@ const Dashboard = () => {
                   <CardDescription>Ringkasan pengeluaran keseluruhan</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-600">Rp 5,500,000</div>
-                  <div className="flex items-center text-sm text-red-500 mt-2">
-                    <ArrowDownCircle className="h-4 w-4 mr-1" />
-                    <span>-8% dari bulan lalu</span>
+                  <div className="text-2xl font-bold text-red-600">Rp {totalExpense.toLocaleString('id-ID')}</div>
+                  <div className="flex items-center text-sm mt-2">
+                    {expenseChangePercent <= 0 ? (
+                      <ArrowDownCircle className="h-4 w-4 mr-1 text-green-500" />
+                    ) : (
+                      <ArrowUpCircle className="h-4 w-4 mr-1 text-red-500" />
+                    )}
+                    <span className={expenseChangePercent <= 0 ? "text-green-500" : "text-red-500"}>
+                      {Math.abs(expenseChangePercent)}% {expenseChangePercent <= 0 ? "turun" : "naik"} dari bulan lalu
+                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -99,8 +262,12 @@ const Dashboard = () => {
                   <CardDescription>Ringkasan arus kas bersih</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-blue-600">Rp 7,000,000</div>
-                  <div className="text-sm text-gray-500 mt-2">Stabil</div>
+                  <div className={`text-2xl font-bold ${netCash >= 0 ? "text-blue-600" : "text-red-600"}`}>
+                    Rp {netCash.toLocaleString('id-ID')}
+                  </div>
+                  <div className="text-sm text-gray-500 mt-2">
+                    {netCash >= 0 ? "Positif" : "Negatif"}
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -114,7 +281,7 @@ const Dashboard = () => {
                   <CardDescription>Analisis tren pendapatan dari waktu ke waktu</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <LineChart data={incomeData} dataKey="value" stroke="#82ca9d" />
+                  <LineChart data={chartData.income} dataKey="value" stroke="#82ca9d" />
                 </CardContent>
               </Card>
 
@@ -124,7 +291,7 @@ const Dashboard = () => {
                   <CardDescription>Analisis tren pengeluaran dari waktu ke waktu</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <BarChart data={expenseData} dataKey="value" fill="#e48080" />
+                  <BarChart data={chartData.expense} dataKey="value" fill="#e48080" />
                 </CardContent>
               </Card>
             </div>
@@ -136,7 +303,7 @@ const Dashboard = () => {
                 <CardTitle>Pendapatan</CardTitle>
               </CardHeader>
               <CardContent>
-                <LineChart data={incomeData} dataKey="value" stroke="#82ca9d" />
+                <LineChart data={chartData.income} dataKey="value" stroke="#82ca9d" />
               </CardContent>
             </Card>
           </TabsContent>
@@ -147,7 +314,7 @@ const Dashboard = () => {
                 <CardTitle>Pengeluaran</CardTitle>
               </CardHeader>
               <CardContent>
-                <BarChart data={expenseData} dataKey="value" fill="#e48080" />
+                <BarChart data={chartData.expense} dataKey="value" fill="#e48080" />
               </CardContent>
             </Card>
           </TabsContent>
@@ -159,7 +326,7 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <LineChart
-                  data={cashFlowData}
+                  data={chartData.cashFlow}
                   dataKey="income"
                   stroke="#82ca9d"
                   dataKey2="expense"
@@ -175,7 +342,7 @@ const Dashboard = () => {
                 <CardTitle>Laporan</CardTitle>
               </CardHeader>
               <CardContent>
-                <PieChart data={pieChartData} dataKey="value" nameKey="name" />
+                <PieChart data={chartData.summary} dataKey="value" nameKey="name" />
               </CardContent>
             </Card>
           </TabsContent>

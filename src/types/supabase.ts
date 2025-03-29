@@ -1,4 +1,5 @@
 
+
 import { Database } from "@/integrations/supabase/types";
 
 // Type for businesses table from Supabase

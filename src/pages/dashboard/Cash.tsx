@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -14,7 +13,6 @@ const CashSummary = () => {
   const { business, isLoading: isLoadingBusiness } = useBusinessResolver(businessId);
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
   
-  // Use the cash data hook to get all cash flow related data
   const {
     isLoading: isLoadingCashData,
     error,
@@ -36,7 +34,6 @@ const CashSummary = () => {
     setSelectedMonth(prevMonth => subMonths(prevMonth, -1));
   };
 
-  // Get month range for display
   const monthStart = startOfMonth(selectedMonth);
   const monthEnd = endOfMonth(selectedMonth);
 
@@ -133,8 +130,8 @@ const CashSummary = () => {
                         Rp {balance.toLocaleString('id-ID')}
                       </p>
                     </div>
-                    <div className={`h-10 w-10 rounded-full bg-${balance >= 0 ? 'blue' : 'red'}-100 flex items-center justify-center`}>
-                      <Wallet className={`h-6 w-6 text-${balance >= 0 ? 'blue' : 'red'}-600`} />
+                    <div className={`h-10 w-10 rounded-full ${balance >= 0 ? 'bg-blue-100' : 'bg-red-100'} flex items-center justify-center`}>
+                      <Wallet className={`h-6 w-6 ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`} />
                     </div>
                   </div>
                 </CardContent>

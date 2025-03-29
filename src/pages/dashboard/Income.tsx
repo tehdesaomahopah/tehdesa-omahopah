@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -20,7 +19,9 @@ const IncomeManagement = () => {
     isLoading,
     error,
     addIncome,
-    isPending
+    isPending,
+    updateIncome,
+    deleteIncome
   } = useIncomeData(businessId);
 
   const handleAddIncome = (newIncome: any) => {
@@ -79,10 +80,12 @@ const IncomeManagement = () => {
           )}
 
           <IncomeList
-            incomes={incomes}
-            isLoading={isLoading}
-            error={error as Error}
+            incomes={incomes} 
+            isLoading={isLoading} 
+            error={error} 
             searchTerm={searchTerm}
+            onUpdateIncome={updateIncome}
+            onDeleteIncome={deleteIncome}
           />
         </CardContent>
       </Card>

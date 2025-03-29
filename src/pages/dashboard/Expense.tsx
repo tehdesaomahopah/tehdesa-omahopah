@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -20,7 +19,9 @@ const ExpenseManagement = () => {
     isLoading,
     error,
     addExpense,
-    isPending
+    isPending,
+    updateExpense,
+    deleteExpense
   } = useExpenseData(businessId);
 
   const handleAddExpense = (newExpense: any) => {
@@ -79,10 +80,12 @@ const ExpenseManagement = () => {
           )}
 
           <ExpenseList
-            expenses={expenses}
-            isLoading={isLoading}
-            error={error as Error}
+            expenses={expenses} 
+            isLoading={isLoading} 
+            error={error} 
             searchTerm={searchTerm}
+            onUpdateExpense={updateExpense}
+            onDeleteExpense={deleteExpense}
           />
         </CardContent>
       </Card>

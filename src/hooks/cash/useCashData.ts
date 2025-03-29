@@ -57,7 +57,7 @@ export const useCashData = (businessId: string | undefined, selectedMonth: Date)
       }
       acc[expense.type] += expense.amount;
       return acc;
-    }, [filteredExpenses]);
+    }, {} as Record<string, number>);
   }, [filteredExpenses]);
 
   // Recent transactions (combined and sorted)

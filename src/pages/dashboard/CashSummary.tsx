@@ -41,7 +41,7 @@ const CashSummary = () => {
 
   const isLoading = isLoadingBusiness || isLoadingCashData;
 
-  // Fixed date setter functions that correctly handle date selection
+  // Correctly implemented date setter functions
   const handleFromDateChange = (date: Date | undefined) => {
     if (date) {
       setDateRange(prev => ({ ...prev, from: date }));

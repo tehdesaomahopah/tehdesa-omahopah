@@ -145,7 +145,11 @@ const CashSummary = () => {
                     <Calendar
                       mode="single"
                       selected={dateRange.from}
-                      onSelect={date => setDateRange(prev => ({ ...prev, from: date }))}
+                      onSelect={(date: Date | undefined) => {
+                        if (date) {
+                          setDateRange(prev => ({ ...prev, from: date }));
+                        }
+                      }}
                       initialFocus
                     />
                   </PopoverContent>
@@ -166,7 +170,11 @@ const CashSummary = () => {
                     <Calendar
                       mode="single"
                       selected={dateRange.to}
-                      onSelect={date => setDateRange(prev => ({ ...prev, to: date }))}
+                      onSelect={(date: Date | undefined) => {
+                        if (date) {
+                          setDateRange(prev => ({ ...prev, to: date }));
+                        }
+                      }}
                       initialFocus
                     />
                   </PopoverContent>

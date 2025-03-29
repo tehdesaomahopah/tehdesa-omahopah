@@ -145,11 +145,7 @@ const CashSummary = () => {
                     <Calendar
                       mode="single"
                       selected={dateRange.from}
-                      onSelect={(date: Date | undefined) => {
-                        if (date) {
-                          setDateRange(prev => ({ ...prev, from: date }));
-                        }
-                      }}
+                      onSelect={setDate}
                       initialFocus
                     />
                   </PopoverContent>
@@ -170,11 +166,7 @@ const CashSummary = () => {
                     <Calendar
                       mode="single"
                       selected={dateRange.to}
-                      onSelect={(date: Date | undefined) => {
-                        if (date) {
-                          setDateRange(prev => ({ ...prev, to: date }));
-                        }
-                      }}
+                      onSelect={setToDate}
                       initialFocus
                     />
                   </PopoverContent>
@@ -296,6 +288,19 @@ const CashSummary = () => {
       </Card>
     </DashboardLayout>
   );
+
+  // Date setter functions to fix TypeScript errors
+  function setDate(date: Date | undefined) {
+    if (date) {
+      setDateRange(prev => ({ ...prev, from: date }));
+    }
+  }
+
+  function setToDate(date: Date | undefined) {
+    if (date) {
+      setDateRange(prev => ({ ...prev, to: date }));
+    }
+  }
 };
 
 export default CashSummary;

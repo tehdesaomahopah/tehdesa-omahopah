@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -145,7 +144,7 @@ const CashSummary = () => {
                     <Calendar
                       mode="single"
                       selected={dateRange.from}
-                      onSelect={(date) => date && setDateRange({ ...dateRange, from: date })}
+                      onSelect={(selectedDate) => selectedDate && setDateRange(prev => ({ ...prev, from: selectedDate }))}
                       initialFocus
                     />
                   </PopoverContent>
@@ -166,7 +165,7 @@ const CashSummary = () => {
                     <Calendar
                       mode="single"
                       selected={dateRange.to}
-                      onSelect={(date) => date && setDateRange({ ...dateRange, to: date })}
+                      onSelect={(selectedDate) => selectedDate && setDateRange(prev => ({ ...prev, to: selectedDate }))}
                       initialFocus
                     />
                   </PopoverContent>

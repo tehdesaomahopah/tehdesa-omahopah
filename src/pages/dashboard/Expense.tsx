@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -8,6 +9,7 @@ import { Plus, Search } from "lucide-react";
 import ExpenseForm from "@/components/expense/ExpenseForm";
 import ExpenseList from "@/components/expense/ExpenseList";
 import { useExpenseData } from "@/hooks/expense/useExpenseData";
+import { Expense } from "@/types/supabase";
 
 const ExpenseManagement = () => {
   const { businessId } = useParams<{ businessId: string }>();
@@ -20,13 +22,22 @@ const ExpenseManagement = () => {
     error,
     addExpense,
     isPending,
-    updateExpense,
-    deleteExpense
+    updateExpense: updateExpenseFunction,
+    deleteExpense: deleteExpenseFunction
   } = useExpenseData(businessId);
 
   const handleAddExpense = (newExpense: any) => {
     addExpense(newExpense);
     setShowForm(false);
+  };
+
+  // Create wrapper functions with the correct types
+  const handleUpdateExpense = (id: string, data: Partial<Expense>) => {
+    updateExpenseFunction({ id, data });
+  };
+
+  const handleDeleteExpense = (id: string) => {
+    deleteExpenseFunction(id);
   };
 
   return (
@@ -84,8 +95,8 @@ const ExpenseManagement = () => {
             isLoading={isLoading} 
             error={error} 
             searchTerm={searchTerm}
-            onUpdateExpense={updateExpense}
-            onDeleteExpense={deleteExpense}
+            onUpdateExpense={handleUpdateExpense}
+            onDeleteExpense={handleDeleteExpense}
           />
         </CardContent>
       </Card>

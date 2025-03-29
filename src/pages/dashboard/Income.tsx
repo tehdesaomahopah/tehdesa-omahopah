@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -8,6 +9,7 @@ import { Plus, Search } from "lucide-react";
 import IncomeForm from "@/components/income/IncomeForm";
 import IncomeList from "@/components/income/IncomeList";
 import { useIncomeData } from "@/hooks/income/useIncomeData";
+import { Income } from "@/types/supabase";
 
 const IncomeManagement = () => {
   const { businessId } = useParams<{ businessId: string }>();
@@ -20,13 +22,22 @@ const IncomeManagement = () => {
     error,
     addIncome,
     isPending,
-    updateIncome,
-    deleteIncome
+    updateIncome: updateIncomeFunction,
+    deleteIncome: deleteIncomeFunction
   } = useIncomeData(businessId);
 
   const handleAddIncome = (newIncome: any) => {
     addIncome(newIncome);
     setShowForm(false);
+  };
+
+  // Create wrapper functions with the correct types
+  const handleUpdateIncome = (id: string, data: Partial<Income>) => {
+    updateIncomeFunction({ id, data });
+  };
+
+  const handleDeleteIncome = (id: string) => {
+    deleteIncomeFunction(id);
   };
 
   return (
@@ -84,8 +95,8 @@ const IncomeManagement = () => {
             isLoading={isLoading} 
             error={error} 
             searchTerm={searchTerm}
-            onUpdateIncome={updateIncome}
-            onDeleteIncome={deleteIncome}
+            onUpdateIncome={handleUpdateIncome}
+            onDeleteIncome={handleDeleteIncome}
           />
         </CardContent>
       </Card>

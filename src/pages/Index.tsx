@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, addMonths, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,21 +8,50 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { LineChart } from "@/components/ui/charts";
+import { BarChart } from "@/components/ui/charts";
 import { useIncomeComparison } from "@/hooks/income/useIncomeComparison";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Index = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
+  // View type state (monthly or yearly)
+  const [viewType, setViewType] = useState<"monthly" | "yearly">("monthly");
+  
   // Custom date range filter
   const [dateRange, setDateRange] = useState<{
     from: Date;
     to: Date;
-  }>({
-    from: new Date(new Date().setDate(1)), // First day of current month
-    to: new Date(), // Today
+  }>(() => {
+    if (viewType === "monthly") {
+      return {
+        from: startOfMonth(new Date()), // First day of current month
+        to: endOfMonth(new Date()), // Last day of current month
+      };
+    } else {
+      return {
+        from: startOfYear(new Date()), // First day of current year
+        to: endOfYear(new Date()), // Last day of current year
+      };
+    }
   });
+
+  // Update date range when view type changes
+  const handleViewTypeChange = (value: "monthly" | "yearly") => {
+    setViewType(value);
+    if (value === "monthly") {
+      setDateRange({
+        from: startOfMonth(new Date()),
+        to: endOfMonth(new Date()),
+      });
+    } else {
+      setDateRange({
+        from: startOfYear(new Date()),
+        to: endOfYear(new Date()),
+      });
+    }
+  };
 
   const businesses = [
     { id: "cijati", name: "Teh Desa Cijati", image: "/lovable-uploads/f9c2176e-769a-418b-b132-effcf585d9d2.png" },
@@ -84,50 +113,66 @@ const Index = () => {
                   <CardTitle className="text-2xl text-green-800">Perbandingan Pendapatan</CardTitle>
                   <CardDescription>Perbandingan pendapatan dari ketiga usaha</CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="justify-start text-left font-normal"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {format(dateRange.from, "dd MMM yyyy")}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.from}
-                        onSelect={(date) => date && setDateRange({ ...dateRange, from: date })}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <span>-</span>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="justify-start text-left font-normal"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {format(dateRange.to, "dd MMM yyyy")}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.to}
-                        onSelect={(date) => date && setDateRange({ ...dateRange, to: date })}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
+                <div className="flex items-center gap-4">
+                  {/* View type selector */}
+                  <Select
+                    value={viewType}
+                    onValueChange={(value) => handleViewTypeChange(value as "monthly" | "yearly")}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Pilih periode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Bulanan</SelectItem>
+                      <SelectItem value="yearly">Tahunan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {format(dateRange.from, "dd MMM yyyy")}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={dateRange.from}
+                          onSelect={(date) => date && setDateRange({ ...dateRange, from: date })}
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <span>-</span>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {format(dateRange.to, "dd MMM yyyy")}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={dateRange.to}
+                          onSelect={(date) => date && setDateRange({ ...dateRange, to: date })}
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -142,12 +187,10 @@ const Index = () => {
                     <p>Tidak ada data pendapatan pada periode ini.</p>
                   </div>
                 ) : (
-                  <LineChart 
+                  <BarChart 
                     data={chartData} 
-                    dataKey="Cijati"
-                    stroke="#10b981"
-                    dataKey2="Shaquilla"
-                    stroke2="#3b82f6"
+                    dataKey="Cijati" 
+                    fill="#10b981"
                   />
                 )}
               </div>

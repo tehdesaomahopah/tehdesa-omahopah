@@ -8,7 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Income from "./pages/dashboard/Income";
 import Expense from "./pages/dashboard/Expense";
-import Cash from "./pages/dashboard/Cash";
+import CashSummary from "./pages/dashboard/CashSummary";
 import Reports from "./pages/dashboard/Reports";
 
 // Create a client outside of the component
@@ -23,10 +23,10 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/dashboard/:businessId" element={<Cash />} />
+            <Route path="/dashboard/:businessId" element={<CashSummary />} />
             <Route path="/dashboard/:businessId/income" element={<Income />} />
             <Route path="/dashboard/:businessId/expense" element={<Expense />} />
-            <Route path="/dashboard/:businessId/cash" element={<Cash />} />
+            <Route path="/dashboard/:businessId/cash" element={<CashSummary />} />
             <Route path="/dashboard/:businessId/reports" element={<Reports />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

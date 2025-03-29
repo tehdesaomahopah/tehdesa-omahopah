@@ -1,31 +1,27 @@
 
-import { useState, useMemo } from "react";
-import { format, isWithinInterval, startOfMonth, endOfMonth } from "date-fns";
+import { useMemo } from "react";
+import { isWithinInterval } from "date-fns";
 import { Income, Expense } from "@/types/supabase";
 import { useIncomeData } from "@/hooks/income/useIncomeData";
 import { useExpenseData } from "@/hooks/expense/useExpenseData";
 
-export const useCashData = (businessId: string | undefined, selectedMonth: Date) => {
-  // Get month range for filtering
-  const monthStart = startOfMonth(selectedMonth);
-  const monthEnd = endOfMonth(selectedMonth);
-
+export const useCashData = (businessId: string | undefined, fromDate: Date, toDate: Date) => {
   // Fetch income and expense data
   const { incomes, isLoading: isLoadingIncomes, error: incomeError } = useIncomeData(businessId);
   const { expenses, isLoading: isLoadingExpenses, error: expenseError } = useExpenseData(businessId);
 
-  // Filter transactions for the selected month
+  // Filter transactions for the selected date range
   const filteredIncomes = useMemo(() => {
     return incomes.filter(
-      (income) => isWithinInterval(income.date, { start: monthStart, end: monthEnd })
+      (income) => isWithinInterval(income.date, { start: fromDate, end: toDate })
     );
-  }, [incomes, monthStart, monthEnd]);
+  }, [incomes, fromDate, toDate]);
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter(
-      (expense) => isWithinInterval(expense.date, { start: monthStart, end: monthEnd })
+      (expense) => isWithinInterval(expense.date, { start: fromDate, end: toDate })
     );
-  }, [expenses, monthStart, monthEnd]);
+  }, [expenses, fromDate, toDate]);
 
   // Calculate totals
   const totalIncome = useMemo(() => {

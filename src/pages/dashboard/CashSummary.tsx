@@ -1,34 +1,31 @@
+
 import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { format, subMonths, startOfMonth, endOfMonth, getYear } from "date-fns";
-import { ArrowUpCircle, ArrowDownCircle, Wallet, Loader2 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format, startOfDay, endOfDay, isWithinInterval } from "date-fns";
+import { ArrowUpCircle, ArrowDownCircle, Wallet, Loader2, CalendarIcon } from "lucide-react";
 import { useCashData } from "@/hooks/cash/useCashData";
 import { useBusinessResolver } from "@/hooks/business/useBusinessResolver";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const CashSummary = () => {
   const { businessId } = useParams<{ businessId: string }>();
   const { business, isLoading: isLoadingBusiness } = useBusinessResolver(businessId);
-  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
   const isMobile = useIsMobile();
   
-  const currentYear = getYear(new Date());
-  const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - i);
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  
-  const handleYearChange = (year: string) => {
-    const newYear = parseInt(year);
-    setSelectedYear(newYear);
-    
-    const newDate = new Date(selectedMonth);
-    newDate.setFullYear(newYear);
-    setSelectedMonth(newDate);
-  };
+  // Custom date range filter
+  const [dateRange, setDateRange] = useState<{
+    from: Date;
+    to: Date;
+  }>({
+    from: new Date(new Date().setDate(1)), // First day of current month
+    to: new Date(), // Today
+  });
 
   const {
     isLoading: isLoadingCashData,
@@ -39,20 +36,9 @@ const CashSummary = () => {
     incomeByType,
     expenseByType,
     recentTransactions
-  } = useCashData(businessId, selectedMonth);
+  } = useCashData(businessId, dateRange.from, dateRange.to);
 
   const isLoading = isLoadingBusiness || isLoadingCashData;
-
-  const handlePreviousMonth = () => {
-    setSelectedMonth(prevMonth => subMonths(prevMonth, 1));
-  };
-
-  const handleNextMonth = () => {
-    setSelectedMonth(prevMonth => subMonths(prevMonth, -1));
-  };
-
-  const monthStart = startOfMonth(selectedMonth);
-  const monthEnd = endOfMonth(selectedMonth);
 
   if (isLoading) {
     return (
@@ -91,35 +77,55 @@ const CashSummary = () => {
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
               <CardTitle>Ringkasan Kas</CardTitle>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                <div className="w-full sm:w-auto mb-2 sm:mb-0">
-                  <Select value={selectedYear.toString()} onValueChange={handleYearChange}>
-                    <SelectTrigger className="h-8 w-24">
-                      <SelectValue placeholder="Tahun" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {yearOptions.map((year) => (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handlePreviousMonth}>
-                    &lt;
-                  </Button>
-                  <span className="px-2">
-                    {format(selectedMonth, "MMMM yyyy")}
-                  </span>
-                  <Button variant="outline" size="sm" onClick={handleNextMonth}>
-                    &gt;
-                  </Button>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {format(dateRange.from, "dd MMM yyyy")}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.from}
+                        onSelect={(date) => date && setDateRange({ ...dateRange, from: date })}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <span>-</span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {format(dateRange.to, "dd MMM yyyy")}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.to}
+                        onSelect={(date) => date && setDateRange({ ...dateRange, to: date })}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </div>
             <CardDescription>
-              Periode {format(monthStart, "d MMMM")} - {format(monthEnd, "d MMMM yyyy")}
+              Periode {format(dateRange.from, "d MMMM")} - {format(dateRange.to, "d MMMM yyyy")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -214,7 +220,7 @@ const CashSummary = () => {
         <Card>
           <CardHeader>
             <CardTitle>Transaksi Terbaru</CardTitle>
-            <CardDescription>5 transaksi terakhir bulan ini</CardDescription>
+            <CardDescription>5 transaksi terakhir pada periode ini</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -240,7 +246,7 @@ const CashSummary = () => {
                   </div>
                 ))
               ) : (
-                <p className="text-gray-500 text-center py-6">Tidak ada transaksi pada bulan ini.</p>
+                <p className="text-gray-500 text-center py-6">Tidak ada transaksi pada periode ini.</p>
               )}
             </div>
           </CardContent>

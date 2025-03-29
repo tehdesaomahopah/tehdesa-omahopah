@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,60 +9,22 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarIcon, Plus, Search } from "lucide-react";
-import { Income, IncomeType } from "@/types/business";
+import { CalendarIcon, Plus, Search, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Income } from "@/types/supabase";
+import { supabase } from "@/integrations/supabase/client";
+import { mapIncomeFromRow } from "@/types/supabase";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getIncomesByBusinessId } from "@/services/businessService";
 
-// Dummy data for incomes
-const dummyIncomes: Income[] = [
-  { 
-    id: "1", 
-    businessId: "cijati", 
-    date: new Date(2023, 5, 15), 
-    type: "Omset Usaha", 
-    description: "Penjualan Toko", 
-    amount: 850000 
-  },
-  { 
-    id: "2", 
-    businessId: "cijati", 
-    date: new Date(2023, 5, 13), 
-    type: "Konsinyasi Usaha", 
-    description: "Konsinyasi Toko Jaya", 
-    amount: 540000 
-  },
-  { 
-    id: "3", 
-    businessId: "cijati", 
-    date: new Date(2023, 5, 10), 
-    type: "Omset Usaha", 
-    description: "Penjualan Online", 
-    amount: 320000 
-  },
-  { 
-    id: "4", 
-    businessId: "shaquilla", 
-    date: new Date(2023, 5, 15), 
-    type: "Omset Usaha", 
-    description: "Penjualan Toko", 
-    amount: 750000 
-  },
-  { 
-    id: "5", 
-    businessId: "kartini", 
-    date: new Date(2023, 5, 14), 
-    type: "Lainnya", 
-    description: "Keuntungan Investasi", 
-    amount: 250000 
-  },
-];
+type IncomeType = "Omset Usaha" | "Konsinyasi Usaha" | "Lainnya";
 
 const IncomeManagement = () => {
   const { businessId } = useParams<{ businessId: string }>();
+  const queryClient = useQueryClient();
   
-  const [incomes, setIncomes] = useState<Income[]>(dummyIncomes);
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   
@@ -79,9 +41,65 @@ const IncomeManagement = () => {
     amount: "",
   });
 
+  // Fetch incomes data from Supabase
+  const {
+    data: incomes = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['incomes', businessId],
+    queryFn: () => businessId ? getIncomesByBusinessId(businessId) : Promise.resolve([]),
+    enabled: !!businessId,
+  });
+
+  // Add new income mutation
+  const addIncomeMutation = useMutation({
+    mutationFn: async (newIncome: Omit<Income, 'id' | 'createdAt'>) => {
+      const { data, error } = await supabase
+        .from('incomes')
+        .insert([{
+          business_id: newIncome.businessId,
+          date: newIncome.date.toISOString(),
+          type: newIncome.type,
+          description: newIncome.description,
+          amount: newIncome.amount
+        }])
+        .select()
+        .single();
+        
+      if (error) {
+        console.error("Error adding income:", error);
+        throw error;
+      }
+      
+      return mapIncomeFromRow(data);
+    },
+    onSuccess: () => {
+      // Invalidate and refetch incomes
+      queryClient.invalidateQueries({ queryKey: ['incomes', businessId] });
+      
+      // Reset form
+      setFormData({
+        date: new Date(),
+        type: "Omset Usaha",
+        description: "",
+        amount: "",
+      });
+      
+      // Hide form
+      setShowForm(false);
+      
+      // Show success notification
+      toast.success("Pendapatan berhasil ditambahkan!");
+    },
+    onError: (error) => {
+      console.error("Error adding income:", error);
+      toast.error("Gagal menambahkan pendapatan. Silahkan coba lagi.");
+    },
+  });
+
   const filteredIncomes = incomes.filter(
     (income) => 
-      income.businessId === businessId && 
       (income.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
        income.type.toLowerCase().includes(searchTerm.toLowerCase()))
   );
@@ -89,32 +107,20 @@ const IncomeManagement = () => {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Parse amount to number
+    const numericAmount = parseInt(formData.amount.replace(/[^0-9]/g, ""), 10);
+    
     // Create new income entry
-    const newIncome: Income = {
-      id: Math.random().toString(36).substring(2, 9),
+    const newIncome = {
       businessId: businessId || "",
       date: formData.date,
       type: formData.type,
       description: formData.description,
-      amount: parseInt(formData.amount.replace(/[^0-9]/g, ""), 10),
+      amount: numericAmount,
     };
     
-    // Update state
-    setIncomes([...incomes, newIncome]);
-    
-    // Reset form
-    setFormData({
-      date: new Date(),
-      type: "Omset Usaha",
-      description: "",
-      amount: "",
-    });
-    
-    // Hide form
-    setShowForm(false);
-    
-    // Show success notification
-    toast.success("Pendapatan berhasil ditambahkan!");
+    // Add income to database
+    addIncomeMutation.mutate(newIncome);
   };
 
   const formatCurrency = (value: string) => {
@@ -246,55 +252,74 @@ const IncomeManagement = () => {
                   <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
                     Batal
                   </Button>
-                  <Button type="submit">
-                    Simpan
+                  <Button 
+                    type="submit"
+                    disabled={addIncomeMutation.isPending}
+                  >
+                    {addIncomeMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Menyimpan...
+                      </>
+                    ) : 'Simpan'}
                   </Button>
                 </div>
               </form>
             </div>
           )}
 
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tanggal</TableHead>
-                  <TableHead>Jenis</TableHead>
-                  <TableHead>Deskripsi</TableHead>
-                  <TableHead className="text-right">Nominal</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredIncomes.length > 0 ? (
-                  filteredIncomes.map((income) => (
-                    <TableRow key={income.id}>
-                      <TableCell>{format(income.date, "dd/MM/yyyy")}</TableCell>
-                      <TableCell>
-                        <span className={cn(
-                          "inline-block px-2 py-1 rounded text-xs font-medium",
-                          income.type === "Omset Usaha" && "bg-green-100 text-green-800",
-                          income.type === "Konsinyasi Usaha" && "bg-blue-100 text-blue-800",
-                          income.type === "Lainnya" && "bg-purple-100 text-purple-800"
-                        )}>
-                          {income.type}
-                        </span>
-                      </TableCell>
-                      <TableCell>{income.description}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        Rp {income.amount.toLocaleString('id-ID')}
+          {isLoading ? (
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-2">Memuat data pendapatan...</span>
+            </div>
+          ) : error ? (
+            <div className="text-center py-6 text-red-500">
+              Terjadi kesalahan saat memuat data. Silakan coba lagi.
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tanggal</TableHead>
+                    <TableHead>Jenis</TableHead>
+                    <TableHead>Deskripsi</TableHead>
+                    <TableHead className="text-right">Nominal</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredIncomes.length > 0 ? (
+                    filteredIncomes.map((income) => (
+                      <TableRow key={income.id}>
+                        <TableCell>{format(income.date, "dd/MM/yyyy")}</TableCell>
+                        <TableCell>
+                          <span className={cn(
+                            "inline-block px-2 py-1 rounded text-xs font-medium",
+                            income.type === "Omset Usaha" && "bg-green-100 text-green-800",
+                            income.type === "Konsinyasi Usaha" && "bg-blue-100 text-blue-800",
+                            income.type === "Lainnya" && "bg-purple-100 text-purple-800"
+                          )}>
+                            {income.type}
+                          </span>
+                        </TableCell>
+                        <TableCell>{income.description}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          Rp {income.amount.toLocaleString('id-ID')}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-6 text-gray-500">
+                        Tidak ada data pendapatan.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-6 text-gray-500">
-                      Tidak ada data pendapatan.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </DashboardLayout>

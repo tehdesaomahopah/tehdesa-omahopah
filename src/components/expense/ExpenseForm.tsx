@@ -42,13 +42,20 @@ const ExpenseForm = ({ businessId, onSubmit, isPending, onCancel }: ExpenseFormP
     setFormData({ ...formData, amount: formattedValue });
   };
 
+  // Handle date change with full Date object
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setFormData({ ...formData, date });
+    }
+  };
+
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Parse amount to number
     const numericAmount = parseInt(formData.amount.replace(/[^0-9]/g, ""), 10);
     
-    // Create new expense entry
+    // Create new expense entry with exact selected date
     const newExpense = {
       businessId,
       date: formData.date,
@@ -86,8 +93,9 @@ const ExpenseForm = ({ businessId, onSubmit, isPending, onCancel }: ExpenseFormP
                 <Calendar
                   mode="single"
                   selected={formData.date}
-                  onSelect={(date) => date && setFormData({ ...formData, date })}
+                  onSelect={handleDateChange}
                   initialFocus
+                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>

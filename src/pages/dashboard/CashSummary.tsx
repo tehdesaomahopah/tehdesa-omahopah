@@ -1,146 +1,256 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { format } from "date-fns";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarChart, LineChart } from "@/components/ui/charts";
+import { useIncomeData } from "@/hooks/income/useIncomeData";
+import { useExpenseData } from "@/hooks/expense/useExpenseData";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
-import { ArrowUpCircle, ArrowDownCircle, Wallet, Loader2, CalendarIcon } from "lucide-react";
-import { useCashData } from "@/hooks/cash/useCashData";
-import { useBusinessResolver } from "@/hooks/business/useBusinessResolver";
-import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon, ArrowRightLeft, TrendingUp, TrendingDown } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+// Helper to create date handling functions
+const createDateChangeHandler = (
+  setDateRange: React.Dispatch<React.SetStateAction<{from: Date; to: Date}>>, 
+  field: 'from' | 'to'
+) => {
+  return (date: Date | undefined) => {
+    if (date) {
+      setDateRange(prev => ({ ...prev, [field]: date }));
+    }
+  };
+};
 
 const CashSummary = () => {
   const { businessId } = useParams<{ businessId: string }>();
-  const { business, isLoading: isLoadingBusiness } = useBusinessResolver(businessId);
-  const isMobile = useIsMobile();
-  
-  // Custom date range filter
-  const [dateRange, setDateRange] = useState<{
-    from: Date;
-    to: Date;
-  }>({
-    from: new Date(new Date().setDate(1)), // First day of current month
-    to: new Date(), // Today
+  const [activeTab, setActiveTab] = useState<'daily' | 'monthly'>('daily');
+  const [viewType, setViewType] = useState<"summary" | "detailed">("summary");
+  const [dateRange, setDateRange] = useState(() => {
+    const now = new Date();
+    const from = new Date(now);
+    from.setDate(now.getDate() - 30);
+    return { from, to: now };
   });
 
-  const {
-    isLoading: isLoadingCashData,
-    error,
-    totalIncome,
-    totalExpense,
-    balance,
-    incomeByType,
-    expenseByType,
-    recentTransactions
-  } = useCashData(businessId, dateRange.from, dateRange.to);
+  // Create date change handlers
+  const handleFromDateChange = createDateChangeHandler(setDateRange, 'from');
+  const handleToDateChange = createDateChangeHandler(setDateRange, 'to');
 
-  const isLoading = isLoadingBusiness || isLoadingCashData;
+  // Get income and expense data
+  const { 
+    incomes, 
+    isLoading: isLoadingIncome 
+  } = useIncomeData(businessId);
 
-  // Date setter functions
-  const handleFromDateChange = (date: Date | undefined) => {
-    if (date) {
-      setDateRange(prev => ({ ...prev, from: date }));
+  const { 
+    expenses, 
+    isLoading: isLoadingExpenses 
+  } = useExpenseData(businessId);
+
+  // Prepare chart data based on date range and active tab
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [summaryData, setSummaryData] = useState<{
+    totalIncome: number;
+    totalExpense: number;
+    balance: number;
+    transactionCount: number;
+  }>({
+    totalIncome: 0,
+    totalExpense: 0,
+    balance: 0,
+    transactionCount: 0
+  });
+
+  useEffect(() => {
+    if (isLoadingIncome || isLoadingExpenses) return;
+
+    // Filter data by date range
+    const filteredIncomes = incomes.filter(income => {
+      const incomeDate = new Date(income.date);
+      return incomeDate >= dateRange.from && incomeDate <= dateRange.to;
+    });
+
+    const filteredExpenses = expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate >= dateRange.from && expenseDate <= dateRange.to;
+    });
+
+    // Calculate summary data
+    const totalIncome = filteredIncomes.reduce((sum, income) => sum + income.amount, 0);
+    const totalExpense = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const balance = totalIncome - totalExpense;
+    const transactionCount = filteredIncomes.length + filteredExpenses.length;
+
+    setSummaryData({
+      totalIncome,
+      totalExpense,
+      balance,
+      transactionCount
+    });
+
+    // Prepare chart data
+    if (activeTab === 'daily') {
+      // Group by day for daily view
+      const dataByDay = new Map<string, { income: number; expense: number }>();
+      
+      // Initialize all days in the range
+      let currentDate = new Date(dateRange.from);
+      while (currentDate <= dateRange.to) {
+        const dateKey = format(currentDate, 'yyyy-MM-dd');
+        dataByDay.set(dateKey, { income: 0, expense: 0 });
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      // Add incomes to their respective days
+      filteredIncomes.forEach(income => {
+        const dateKey = format(new Date(income.date), 'yyyy-MM-dd');
+        const current = dataByDay.get(dateKey) || { income: 0, expense: 0 };
+        dataByDay.set(dateKey, { 
+          ...current, 
+          income: current.income + income.amount 
+        });
+      });
+      
+      // Add expenses to their respective days
+      filteredExpenses.forEach(expense => {
+        const dateKey = format(new Date(expense.date), 'yyyy-MM-dd');
+        const current = dataByDay.get(dateKey) || { income: 0, expense: 0 };
+        dataByDay.set(dateKey, { 
+          ...current, 
+          expense: current.expense + expense.amount 
+        });
+      });
+      
+      // Convert to array for the chart
+      const chartData = Array.from(dataByDay.entries())
+        .sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime())
+        .map(([date, data]) => ({
+          name: format(new Date(date), 'dd/MM'),
+          Pendapatan: data.income,
+          Pengeluaran: data.expense,
+          Saldo: data.income - data.expense
+        }));
+      
+      setChartData(chartData);
+    } else {
+      // Group by month for monthly view
+      const dataByMonth = new Map<string, { income: number; expense: number }>();
+      
+      // Add incomes to their respective months
+      filteredIncomes.forEach(income => {
+        const monthKey = format(new Date(income.date), 'yyyy-MM');
+        const current = dataByMonth.get(monthKey) || { income: 0, expense: 0 };
+        dataByMonth.set(monthKey, { 
+          ...current, 
+          income: current.income + income.amount 
+        });
+      });
+      
+      // Add expenses to their respective months
+      filteredExpenses.forEach(expense => {
+        const monthKey = format(new Date(expense.date), 'yyyy-MM');
+        const current = dataByMonth.get(monthKey) || { income: 0, expense: 0 };
+        dataByMonth.set(monthKey, { 
+          ...current, 
+          expense: current.expense + expense.amount 
+        });
+      });
+      
+      // Convert to array for the chart
+      const chartData = Array.from(dataByMonth.entries())
+        .sort(([monthA], [monthB]) => new Date(monthA).getTime() - new Date(monthB).getTime())
+        .map(([month, data]) => ({
+          name: format(new Date(month), 'MMM yyyy'),
+          Pendapatan: data.income,
+          Pengeluaran: data.expense,
+          Saldo: data.income - data.expense
+        }));
+      
+      setChartData(chartData);
     }
-  };
-
-  const handleToDateChange = (date: Date | undefined) => {
-    if (date) {
-      setDateRange(prev => ({ ...prev, to: date }));
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="flex justify-center items-center h-[80vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
-          <p>Memuat data kas...</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <DashboardLayout>
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Error</h2>
-          <p className="text-gray-700">{error.message}</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  const isPositiveBalance = balance >= 0;
+  }, [incomes, expenses, dateRange, activeTab, isLoadingIncome, isLoadingExpenses]);
 
   return (
     <DashboardLayout>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">KasKu</h1>
-        <p className="text-gray-600">Ringkasan kas untuk usaha {business?.name || businessId}</p>
+        <h1 className="text-2xl font-bold text-gray-800">Ringkasan Keuangan</h1>
+        <p className="text-gray-600">Pantau pendapatan dan pengeluaran usaha Anda</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8 w-full">
-        <Card className="border-green-100">
-          <CardContent className="p-4">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Total Pendapatan</p>
-                <p className="text-2xl font-bold text-green-600">
-                  Rp {totalIncome.toLocaleString('id-ID')}
-                </p>
+                <p className="text-sm font-medium text-green-700">Total Pendapatan</p>
+                <p className="text-2xl font-bold text-green-800">Rp {summaryData.totalIncome.toLocaleString('id-ID')}</p>
               </div>
-              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                <ArrowUpCircle className="h-6 w-6 text-green-600" />
-              </div>
+              <TrendingUp className="h-8 w-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
-        
-        <Card className="border-red-100">
-          <CardContent className="p-4">
+
+        <Card className="bg-red-50 border-red-200">
+          <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Total Pengeluaran</p>
-                <p className="text-2xl font-bold text-red-600">
-                  Rp {totalExpense.toLocaleString('id-ID')}
-                </p>
+                <p className="text-sm font-medium text-red-700">Total Pengeluaran</p>
+                <p className="text-2xl font-bold text-red-800">Rp {summaryData.totalExpense.toLocaleString('id-ID')}</p>
               </div>
-              <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
-                <ArrowDownCircle className="h-6 w-6 text-red-600" />
-              </div>
+              <TrendingDown className="h-8 w-8 text-red-500" />
             </div>
           </CardContent>
         </Card>
-        
-        <Card className={isPositiveBalance ? "border-blue-100" : "border-red-100"}>
-          <CardContent className="p-4">
+
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Saldo</p>
-                <p className={`text-2xl font-bold ${isPositiveBalance ? "text-blue-600" : "text-red-600"}`}>
-                  Rp {balance.toLocaleString('id-ID')}
-                </p>
+                <p className="text-sm font-medium text-blue-700">Saldo</p>
+                <p className="text-2xl font-bold text-blue-800">Rp {summaryData.balance.toLocaleString('id-ID')}</p>
               </div>
-              <div className={`h-10 w-10 rounded-full flex items-center justify-center ${isPositiveBalance ? "bg-blue-100" : "bg-red-100"}`}>
-                <Wallet className={`h-6 w-6 ${isPositiveBalance ? "text-blue-600" : "text-red-600"}`} />
+              <ArrowRightLeft className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-50 border-gray-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Jumlah Transaksi</p>
+                <p className="text-2xl font-bold text-gray-800">{summaryData.transactionCount}</p>
               </div>
+              <p className="text-sm text-gray-600">{format(dateRange.from, "dd/MM/yyyy")} - {format(dateRange.to, "dd/MM/yyyy")}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Date Range Filter */}
-      <Card className="mb-8 w-full">
-        <CardHeader className="pb-2">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-            <CardTitle>Filter Periode</CardTitle>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+      {/* Chart Section */}
+      <Card className="mb-8">
+        <div className="p-6">
+          {/* Filter Controls */}
+          <div className="mb-6 flex flex-wrap gap-4 items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">Grafik Aliran Kas</h2>
+              <p className="text-gray-500">Visualisasi pendapatan dan pengeluaran</p>
+            </div>
+            
+            <div className="flex flex-wrap gap-3 items-center">
+              <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'daily' | 'monthly')}>
+                <TabsList>
+                  <TabsTrigger value="daily">Harian</TabsTrigger>
+                  <TabsTrigger value="monthly">Bulanan</TabsTrigger>
+                </TabsList>
+              </Tabs>
+
               <div className="flex items-center gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
@@ -159,10 +269,13 @@ const CashSummary = () => {
                       selected={dateRange.from}
                       onSelect={handleFromDateChange}
                       initialFocus
+                      className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
-                <span>-</span>
+
+                <span>—</span>
+
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -180,120 +293,68 @@ const CashSummary = () => {
                       selected={dateRange.to}
                       onSelect={handleToDateChange}
                       initialFocus
+                      className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
               </div>
+
+              <Select value={viewType} onValueChange={(value) => setViewType(value as "summary" | "detailed")}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Tipe Tampilan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="summary">Rangkuman</SelectItem>
+                  <SelectItem value="detailed">Detail</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          <CardDescription>
-            Periode {format(dateRange.from, "d MMMM")} - {format(dateRange.to, "d MMMM yyyy")}
-          </CardDescription>
-        </CardHeader>
-      </Card>
 
-      <Card className="mb-8 w-full">
-        <CardHeader>
-          <CardTitle>Pendapatan per Kategori</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Kategori</TableHead>
-                <TableHead className="text-right">Jumlah</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Object.entries(incomeByType).map(([type, amount]) => (
-                <TableRow key={type}>
-                  <TableCell className="font-medium">{type}</TableCell>
-                  <TableCell className="text-right text-green-600 font-medium">
-                    Rp {amount.toLocaleString('id-ID')}
-                  </TableCell>
-                </TableRow>
-              ))}
-              {Object.keys(incomeByType).length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={2} className="text-center py-4 text-gray-500">
-                    Tidak ada data pendapatan.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+          {/* Chart Display */}
+          <div className="h-80 mb-4">
+            {isLoadingIncome || isLoadingExpenses ? (
+              <div className="flex justify-center items-center h-full">
+                <p>Memuat data...</p>
+              </div>
+            ) : chartData.length > 0 ? (
+              viewType === "summary" ? (
+                <BarChart 
+                  data={chartData} 
+                  dataKeys={["Pendapatan", "Pengeluaran", "Saldo"]}
+                  colors={["#10b981", "#ef4444", "#3b82f6"]} 
+                />
+              ) : (
+                <LineChart 
+                  data={chartData} 
+                  dataKey="Pendapatan" 
+                  stroke="#10b981" 
+                  dataKey2="Pengeluaran" 
+                  stroke2="#ef4444" 
+                />
+              )
+            ) : (
+              <div className="flex justify-center items-center h-full">
+                <p>Tidak ada data dalam periode yang dipilih.</p>
+              </div>
+            )}
+          </div>
 
-      <Card className="mb-8 w-full">
-        <CardHeader>
-          <CardTitle>Pengeluaran per Kategori</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Kategori</TableHead>
-                <TableHead className="text-right">Jumlah</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Object.entries(expenseByType).map(([type, amount]) => (
-                <TableRow key={type}>
-                  <TableCell className="font-medium">{type}</TableCell>
-                  <TableCell className="text-right text-red-600 font-medium">
-                    Rp {amount.toLocaleString('id-ID')}
-                  </TableCell>
-                </TableRow>
-              ))}
-              {Object.keys(expenseByType).length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={2} className="text-center py-4 text-gray-500">
-                    Tidak ada data pengeluaran.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Transaksi Terbaru</CardTitle>
-          <CardDescription>5 transaksi terakhir pada periode ini</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Deskripsi</TableHead>
-                <TableHead>Kategori</TableHead>
-                <TableHead className="text-right">Jumlah</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentTransactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell>{format(transaction.date, "dd MMM yyyy")}</TableCell>
-                  <TableCell className="font-medium">{transaction.description}</TableCell>
-                  <TableCell>{transaction.type}</TableCell>
-                  <TableCell className={`text-right ${transaction.transactionType === 'income' ? 'text-green-600' : 'text-red-600'} font-medium`}>
-                    {transaction.transactionType === 'income' ? '+' : '-'} Rp {transaction.amount.toLocaleString('id-ID')}
-                  </TableCell>
-                </TableRow>
-              ))}
-              {recentTransactions.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-4 text-gray-500">
-                    Tidak ada transaksi pada periode ini.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+          <div className="flex justify-center gap-6">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <span>Pendapatan</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <span>Pengeluaran</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+              <span>Saldo</span>
+            </div>
+          </div>
+        </div>
       </Card>
     </DashboardLayout>
   );

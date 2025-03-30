@@ -1,11 +1,9 @@
-import { useState } from "react";
-import { format, addMonths, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
+
+import { useState, useCallback, useEffect } from "react";
+import { format, getYear, getMonth, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BarChart } from "@/components/ui/charts";
 import { useIncomeComparison } from "@/hooks/income/useIncomeComparison";
@@ -18,39 +16,61 @@ const Index = () => {
   // View type state (monthly or yearly)
   const [viewType, setViewType] = useState<"monthly" | "yearly">("monthly");
   
-  // Custom date range filter
+  // Month and Year selections
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  
+  // Calculate date range based on view type and selections
   const [dateRange, setDateRange] = useState<{
     from: Date;
     to: Date;
   }>(() => {
     if (viewType === "monthly") {
+      const currentDate = new Date(selectedYear, selectedMonth);
       return {
-        from: startOfMonth(new Date()), // First day of current month
-        to: endOfMonth(new Date()), // Last day of current month
+        from: startOfMonth(currentDate),
+        to: endOfMonth(currentDate),
       };
     } else {
       return {
-        from: startOfYear(new Date()), // First day of current year
-        to: endOfYear(new Date()), // Last day of current year
+        from: startOfYear(new Date(selectedYear, 0)),
+        to: endOfYear(new Date(selectedYear, 0)),
       };
     }
   });
 
-  // Update date range when view type changes
-  const handleViewTypeChange = (value: "monthly" | "yearly") => {
-    setViewType(value);
-    if (value === "monthly") {
+  // Update date range when selections change
+  useEffect(() => {
+    if (viewType === "monthly") {
+      const monthDate = new Date(selectedYear, selectedMonth);
       setDateRange({
-        from: startOfMonth(new Date()),
-        to: endOfMonth(new Date()),
+        from: startOfMonth(monthDate),
+        to: endOfMonth(monthDate),
       });
     } else {
       setDateRange({
-        from: startOfYear(new Date()),
-        to: endOfYear(new Date()),
+        from: startOfYear(new Date(selectedYear, 0)),
+        to: endOfYear(new Date(selectedYear, 0)),
       });
     }
-  };
+  }, [viewType, selectedMonth, selectedYear]);
+
+  // Update date range when view type changes
+  const handleViewTypeChange = useCallback((value: "monthly" | "yearly") => {
+    setViewType(value);
+    if (value === "monthly") {
+      const monthDate = new Date(selectedYear, selectedMonth);
+      setDateRange({
+        from: startOfMonth(monthDate),
+        to: endOfMonth(monthDate),
+      });
+    } else {
+      setDateRange({
+        from: startOfYear(new Date(selectedYear, 0)),
+        to: endOfYear(new Date(selectedYear, 0)),
+      });
+    }
+  }, [selectedMonth, selectedYear]);
 
   const businesses = [
     { id: "cijati", name: "Teh Desa Cijati", image: "/lovable-uploads/f9c2176e-769a-418b-b132-effcf585d9d2.png" },
@@ -67,6 +87,26 @@ const Index = () => {
     // Navigate to the dashboard for the selected business
     navigate(`/dashboard/${businessId}/cash`);
   };
+
+  // Generate month options
+  const months = [
+    { value: 0, label: "Januari" },
+    { value: 1, label: "Februari" },
+    { value: 2, label: "Maret" },
+    { value: 3, label: "April" },
+    { value: 4, label: "Mei" },
+    { value: 5, label: "Juni" },
+    { value: 6, label: "Juli" },
+    { value: 7, label: "Agustus" },
+    { value: 8, label: "September" },
+    { value: 9, label: "Oktober" },
+    { value: 10, label: "November" },
+    { value: 11, label: "Desember" }
+  ];
+
+  // Generate year options (last 5 years to next 5 years)
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-green-100">
@@ -127,51 +167,41 @@ const Index = () => {
                     </SelectContent>
                   </Select>
                   
-                  <div className="flex items-center gap-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="justify-start text-left font-normal"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {format(dateRange.from, "dd MMM yyyy")}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={dateRange.from}
-                          onSelect={(date) => date && setDateRange({ ...dateRange, from: date })}
-                          initialFocus
-                          className="p-3 pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <span>-</span>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="justify-start text-left font-normal"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {format(dateRange.to, "dd MMM yyyy")}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={dateRange.to}
-                          onSelect={(date) => date && setDateRange({ ...dateRange, to: date })}
-                          initialFocus
-                          className="p-3 pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                  {/* Month selector (only shown when viewType is monthly) */}
+                  {viewType === "monthly" && (
+                    <Select
+                      value={selectedMonth.toString()}
+                      onValueChange={(value) => setSelectedMonth(parseInt(value))}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Pilih bulan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {months.map((month) => (
+                          <SelectItem key={month.value} value={month.value.toString()}>
+                            {month.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  
+                  {/* Year selector */}
+                  <Select
+                    value={selectedYear.toString()}
+                    onValueChange={(value) => setSelectedYear(parseInt(value))}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Pilih tahun" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardHeader>

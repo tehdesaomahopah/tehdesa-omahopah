@@ -56,9 +56,12 @@ const IncomeForm = ({ businessId, onSubmit, isPending, onCancel }: IncomeFormPro
     const numericAmount = parseInt(formData.amount.replace(/[^0-9]/g, ""), 10);
     
     // Create new income entry with the exact selected date
+    const localDate = new Date(formData.date);
+      localDate.setHours(12, 0, 0, 0); // Pastikan tetap di zona waktu lokal
+
     const newIncome = {
       businessId,
-      date: formData.date, // Use the date directly
+      date: localDate, // Pakai yang sudah diperbaiki
       type: formData.type,
       description: formData.description,
       amount: numericAmount,

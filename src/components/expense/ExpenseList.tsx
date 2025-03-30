@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { id } from "date-fns/locale"; // Tambahkan ini untuk localization Bahasa Indonesia
 import { cn } from "@/lib/utils";
 import { Expense } from "@/types/supabase";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -251,7 +250,7 @@ const ExpenseList = ({
             {currentExpenses.length > 0 ? (
               currentExpenses.map((expense) => (
                 <TableRow key={expense.id}>
-                  <TableCell>{format(new Date(expense.date + "T00:00:00"), "dd/MM/yyyy", { locale: id })}</TableCell>
+                  <TableCell>{format(new Date(expense.date), "dd/MM/yyyy")}</TableCell>
                   <TableCell>
                     <span className={cn(
                       "inline-block px-2 py-1 rounded text-xs font-medium",

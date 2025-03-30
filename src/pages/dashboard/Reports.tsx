@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from "date-fns";
@@ -6,7 +5,6 @@ import { id } from 'date-fns/locale';
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowDown, ArrowUp, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BarChart } from "@/components/ui/charts";
@@ -16,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Expense, Income } from "@/types/supabase";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import DateFilterSelector from "@/components/filters/DateFilterSelector";
 
 const Reports = () => {
   const { businessId } = useParams<{ businessId: string }>();
@@ -31,10 +30,12 @@ const Reports = () => {
   // Calculate date range based on filter
   const dateRange = useMemo(() => {
     if (filterType === 'month') {
+      // Fix: Convert selectedYear to number before using it in Date constructor
       const firstDayOfMonth = startOfMonth(new Date(`${selectedYear}-${selectedMonth}-01`));
       const lastDayOfMonth = endOfMonth(firstDayOfMonth);
       return { from: firstDayOfMonth, to: lastDayOfMonth };
     } else {
+      // Fix: Convert selectedYear to number before using it in Date constructor
       const firstDayOfYear = startOfYear(new Date(`${selectedYear}-01-01`));
       const lastDayOfYear = endOfYear(firstDayOfYear);
       return { from: firstDayOfYear, to: lastDayOfYear };
@@ -123,7 +124,7 @@ const Reports = () => {
       // Initialize all days of the month
       const daysInMonth = Array.from(
         { length: dateRange.to.getDate() },
-        (_, i) => format(new Date(selectedYear, parseInt(selectedMonth) - 1, i + 1), 'dd')
+        (_, i) => format(new Date(parseInt(selectedYear), parseInt(selectedMonth) - 1, i + 1), 'dd')
       );
       
       daysInMonth.forEach(day => {
@@ -210,7 +211,6 @@ const Reports = () => {
     
   }, [incomes, expenses, dateRange, isLoadingIncome, isLoadingExpenses, filterType, selectedMonth, selectedYear, months]);
   
-  // Apply sorting to transactions
   const sortedTransactions = [...transactions].sort((a, b) => {
     if (sortConfig.key === 'date') {
       const dateA = new Date(a[sortConfig.key]);
@@ -321,327 +321,279 @@ const Reports = () => {
       </div>
       
       {/* Filter Controls */}
-      <div className="mb-6 flex flex-col lg:flex-row gap-4 items-start lg:items-center">
-        <div className="flex flex-col md:flex-row gap-2 md:items-center">
-          <span className="text-sm font-medium">Tampilkan:</span>
-          <Select 
-            value={filterType}
-            onValueChange={(value) => setFilterType(value as 'month' | 'year')}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Pilih tampilan" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="month">Bulanan</SelectItem>
-              <SelectItem value="year">Tahunan</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          {filterType === 'month' ? (
-            <>
-              <Select
-                value={selectedMonth}
-                onValueChange={setSelectedMonth}
-              >
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Pilih bulan" />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map((month) => (
-                    <SelectItem key={month.value} value={month.value}>
-                      {month.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select
-                value={selectedYear}
-                onValueChange={setSelectedYear}
-              >
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Pilih tahun" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableYears.map((year) => (
-                    <SelectItem key={year} value={year}>{year}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </>
-          ) : (
-            <Select
-              value={selectedYear}
-              onValueChange={setSelectedYear}
-            >
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Pilih tahun" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableYears.map((year) => (
-                  <SelectItem key={year} value={year}>{year}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
+      <div className="mb-6">
+        <DateFilterSelector
+          filterType={filterType}
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+          onFilterTypeChange={setFilterType}
+          onMonthChange={setSelectedMonth}
+          onYearChange={setSelectedYear}
+        />
         
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="ml-auto"
-          onClick={downloadCSV}
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Unduh Laporan CSV
-        </Button>
+        <div className="mt-4 flex justify-end">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={downloadCSV}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Unduh Laporan CSV
+          </Button>
+        </div>
       </div>
       
       {/* Chart Section - Full Width */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Grafik Pendapatan dan Pengeluaran</CardTitle>
-          <CardDescription>
-            Periode: {periodText}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[400px] w-full">
-            {isLoadingIncome || isLoadingExpenses ? (
-              <div className="flex items-center justify-center h-full">
-                <p>Memuat data...</p>
+      <div className="grid grid-cols-1 gap-6 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Grafik Pendapatan dan Pengeluaran</CardTitle>
+            <CardDescription>
+              Periode: {periodText}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[400px] w-full">
+              {isLoadingIncome || isLoadingExpenses ? (
+                <div className="flex items-center justify-center h-full">
+                  <p>Memuat data...</p>
+                </div>
+              ) : chartData.length > 0 ? (
+                <BarChart 
+                  data={chartData} 
+                  dataKeys={["Pendapatan", "Pengeluaran", "Saldo"]}
+                  colors={["#10b981", "#ef4444", "#3b82f6"]} 
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p>Tidak ada data dalam periode yang dipilih.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-center mt-4 gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                <span>Pendapatan</span>
               </div>
-            ) : chartData.length > 0 ? (
-              <BarChart 
-                data={chartData} 
-                dataKeys={["Pendapatan", "Pengeluaran", "Saldo"]}
-                colors={["#10b981", "#ef4444", "#3b82f6"]} 
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p>Tidak ada data dalam periode yang dipilih.</p>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                <span>Pengeluaran</span>
               </div>
-            )}
-          </div>
-          
-          <div className="flex justify-center mt-4 gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span>Pendapatan</span>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                <span>Saldo</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span>Pengeluaran</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span>Saldo</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
       
       {/* Statistics Section - Full Width */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Statistik Keuangan</CardTitle>
-          <CardDescription>
-            Rangkuman statistik keuangan pada periode {periodText}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-green-50 p-4 rounded-lg">
-              <p className="text-sm font-medium text-green-800">Total Pendapatan</p>
-              <p className="text-2xl font-bold text-green-700">
-                Rp {totalIncome.toLocaleString('id-ID')}
-              </p>
+      <div className="grid grid-cols-1 gap-6 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Statistik Keuangan</CardTitle>
+            <CardDescription>
+              Rangkuman statistik keuangan pada periode {periodText}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-green-50 p-4 rounded-lg">
+                <p className="text-sm font-medium text-green-800">Total Pendapatan</p>
+                <p className="text-2xl font-bold text-green-700">
+                  Rp {totalIncome.toLocaleString('id-ID')}
+                </p>
+              </div>
+              
+              <div className="bg-red-50 p-4 rounded-lg">
+                <p className="text-sm font-medium text-red-800">Total Pengeluaran</p>
+                <p className="text-2xl font-bold text-red-700">
+                  Rp {totalExpense.toLocaleString('id-ID')}
+                </p>
+              </div>
+              
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm font-medium text-blue-800">Saldo</p>
+                <p className="text-2xl font-bold text-blue-700">
+                  Rp {balance.toLocaleString('id-ID')}
+                </p>
+              </div>
             </div>
             
-            <div className="bg-red-50 p-4 rounded-lg">
-              <p className="text-sm font-medium text-red-800">Total Pengeluaran</p>
-              <p className="text-2xl font-bold text-red-700">
-                Rp {totalExpense.toLocaleString('id-ID')}
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm font-medium text-gray-800">Jumlah Transaksi</p>
+                <p className="text-2xl font-bold text-gray-700">
+                  {totalTransactions}
+                </p>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm font-medium text-gray-800">Periode</p>
+                <p className="text-lg font-medium text-gray-700">
+                  {periodText}
+                </p>
+              </div>
             </div>
-            
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-sm font-medium text-blue-800">Saldo</p>
-              <p className="text-2xl font-bold text-blue-700">
-                Rp {balance.toLocaleString('id-ID')}
-              </p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="text-sm font-medium text-gray-800">Jumlah Transaksi</p>
-              <p className="text-2xl font-bold text-gray-700">
-                {totalTransactions}
-              </p>
-            </div>
-            
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="text-sm font-medium text-gray-800">Periode</p>
-              <p className="text-lg font-medium text-gray-700">
-                {periodText}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
       
       {/* Transactions Table - Full Width */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Transaksi Detail</CardTitle>
-          <CardDescription>
-            Daftar seluruh transaksi pada periode {periodText}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('date')}>
-                    <div className="flex items-center">
-                      Tanggal
-                      {getSortIcon('date')}
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('transactionType')}>
-                    <div className="flex items-center">
-                      Jenis
-                      {getSortIcon('transactionType')}
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('type')}>
-                    <div className="flex items-center">
-                      Kategori
-                      {getSortIcon('type')}
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('description')}>
-                    <div className="flex items-center">
-                      Deskripsi
-                      {getSortIcon('description')}
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-right cursor-pointer" onClick={() => handleSort('amount')}>
-                    <div className="flex items-center justify-end">
-                      Jumlah
-                      {getSortIcon('amount')}
-                    </div>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedTransactions.length > 0 ? (
-                  paginatedTransactions.map((transaction, index) => {
-                    const isIncome = 'transactionType' in transaction && transaction.transactionType === 'income';
-                    
-                    return (
-                      <TableRow key={index}>
-                        <TableCell>
-                          {format(new Date(transaction.date), "dd/MM/yyyy")}
-                        </TableCell>
-                        <TableCell>
-                          <span className={cn(
-                            "inline-block px-2 py-1 rounded text-xs font-medium",
-                            isIncome ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                          )}>
-                            {isIncome ? "Pendapatan" : "Pengeluaran"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className={cn(
-                            "inline-block px-2 py-1 rounded text-xs font-medium",
-                            transaction.type === "Omset Usaha" && "bg-green-100 text-green-800",
-                            transaction.type === "Konsinyasi Usaha" && "bg-blue-100 text-blue-800",
-                            transaction.type === "Belanja Bahan" && "bg-amber-100 text-amber-800",
-                            transaction.type === "Upah Pegawai" && "bg-blue-100 text-blue-800",
-                            transaction.type === "Marketing" && "bg-purple-100 text-purple-800",
-                            transaction.type === "Maintenance" && "bg-cyan-100 text-cyan-800",
-                            transaction.type === "Bagi Hasil" && "bg-pink-100 text-pink-800",
-                            transaction.type === "Iuran" && "bg-indigo-100 text-indigo-800",
-                            transaction.type === "Lainnya" && "bg-gray-100 text-gray-800"
-                          )}>
-                            {transaction.type}
-                          </span>
-                        </TableCell>
-                        <TableCell>{transaction.description}</TableCell>
-                        <TableCell className="text-right font-medium">
-                          <span className={isIncome ? "text-green-600" : "text-red-600"}>
-                            {isIncome ? "+ " : "- "}
-                            Rp {transaction.amount.toLocaleString('id-ID')}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                ) : (
+      <div className="grid grid-cols-1 gap-6 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Transaksi Detail</CardTitle>
+            <CardDescription>
+              Daftar seluruh transaksi pada periode {periodText}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-6 text-gray-500">
-                      Tidak ada transaksi dalam periode yang dipilih.
-                    </TableCell>
+                    <TableHead className="cursor-pointer" onClick={() => handleSort('date')}>
+                      <div className="flex items-center">
+                        Tanggal
+                        {getSortIcon('date')}
+                      </div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer" onClick={() => handleSort('transactionType')}>
+                      <div className="flex items-center">
+                        Jenis
+                        {getSortIcon('transactionType')}
+                      </div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer" onClick={() => handleSort('type')}>
+                      <div className="flex items-center">
+                        Kategori
+                        {getSortIcon('type')}
+                      </div>
+                    </TableHead>
+                    <TableHead className="cursor-pointer" onClick={() => handleSort('description')}>
+                      <div className="flex items-center">
+                        Deskripsi
+                        {getSortIcon('description')}
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-right cursor-pointer" onClick={() => handleSort('amount')}>
+                      <div className="flex items-center justify-end">
+                        Jumlah
+                        {getSortIcon('amount')}
+                      </div>
+                    </TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Pagination className="mt-4">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious 
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-                
-                {[...Array(totalPages)].map((_, i) => {
-                  const page = i + 1;
-                  // Show first page, current page, last page, and pages around current
-                  if (
-                    page === 1 || 
-                    page === totalPages || 
-                    (page >= currentPage - 1 && page <= currentPage + 1)
-                  ) {
-                    return (
-                      <PaginationItem key={page}>
-                        <PaginationLink 
-                          isActive={currentPage === page}
-                          onClick={() => setCurrentPage(page)}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
-                  } 
-                  // Show ellipsis
-                  else if (
-                    page === currentPage - 2 || 
-                    page === currentPage + 2
-                  ) {
-                    return <PaginationEllipsis key={`ellipsis-${page}`} />;
-                  }
-                  return null;
-                })}
-                
-                <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {paginatedTransactions.length > 0 ? (
+                    paginatedTransactions.map((transaction, index) => {
+                      const isIncome = 'transactionType' in transaction && transaction.transactionType === 'income';
+                      
+                      return (
+                        <TableRow key={index}>
+                          <TableCell>
+                            {format(new Date(transaction.date), "dd/MM/yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <span className={cn(
+                              "inline-block px-2 py-1 rounded text-xs font-medium",
+                              isIncome ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                            )}>
+                              {isIncome ? "Pendapatan" : "Pengeluaran"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className={cn(
+                              "inline-block px-2 py-1 rounded text-xs font-medium",
+                              transaction.type === "Omset Usaha" && "bg-green-100 text-green-800",
+                              transaction.type === "Konsinyasi Usaha" && "bg-blue-100 text-blue-800",
+                              transaction.type === "Belanja Bahan" && "bg-amber-100 text-amber-800",
+                              transaction.type === "Upah Pegawai" && "bg-blue-100 text-blue-800",
+                              transaction.type === "Marketing" && "bg-purple-100 text-purple-800",
+                              transaction.type === "Maintenance" && "bg-cyan-100 text-cyan-800",
+                              transaction.type === "Bagi Hasil" && "bg-pink-100 text-pink-800",
+                              transaction.type === "Iuran" && "bg-indigo-100 text-indigo-800",
+                              transaction.type === "Lainnya" && "bg-gray-100 text-gray-800"
+                            )}>
+                              {transaction.type}
+                            </span>
+                          </TableCell>
+                          <TableCell>{transaction.description}</TableCell>
+                          <TableCell className="text-right font-medium">
+                            <span className={isIncome ? "text-green-600" : "text-red-600"}>
+                              {isIncome ? "+ " : "- "}
+                              Rp {transaction.amount.toLocaleString('id-ID')}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-6 text-gray-500">
+                        Tidak ada transaksi dalam periode yang dipilih.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <Pagination className="mt-4">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  
+                  {[...Array(totalPages)].map((_, i) => {
+                    const page = i + 1;
+                    // Show first page, current page, last page, and pages around current
+                    if (
+                      page === 1 || 
+                      page === totalPages || 
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationLink 
+                            isActive={currentPage === page}
+                            onClick={() => setCurrentPage(page)}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    } 
+                    // Show ellipsis
+                    else if (
+                      page === currentPage - 2 || 
+                      page === currentPage + 2
+                    ) {
+                      return <PaginationEllipsis key={`ellipsis-${page}`} />;
+                    }
+                    return null;
+                  })}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </DashboardLayout>
   );
 };

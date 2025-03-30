@@ -34,7 +34,7 @@ const ExpenseList = ({
   const [editingExpense, setEditingExpense] = useState<{
     id: string;
     data: {
-      date?: Date;
+      date: Date;
       type: string;
       description: string;
       amount: number;
@@ -271,7 +271,12 @@ const ExpenseList = ({
                     <div className="flex justify-end space-x-2">
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-8 w-8">
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={() => handleEditClick(expense)}
+                          >
                             <Pencil className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
@@ -279,86 +284,91 @@ const ExpenseList = ({
                           <DialogHeader>
                             <DialogTitle>Edit Pengeluaran</DialogTitle>
                           </DialogHeader>
-                          <div className="space-y-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                              <label className="text-right text-sm font-medium">
-                                Tanggal
-                              </label>
-                              <div className="col-span-3">
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button
-                                      id="date-picker"
-                                      variant="outline"
-                                      className="w-full justify-start text-left font-normal"
-                                    >
-                                      <CalendarIcon className="mr-2 h-4 w-4" />
-                                      {editingExpense?.data.date ? (
-                                        format(editingExpense.data.date, "dd MMMM yyyy")
-                                      ) : (
-                                        format(new Date(expense.date), "dd MMMM yyyy")
-                                      )}
-                                    </Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0">
-                                    <Calendar
-                                      mode="single"
-                                      selected={editingExpense?.data.date}
-                                      onSelect={handleEditDateChange}
-                                      initialFocus
-                                      className="p-3 pointer-events-auto"
-                                    />
-                                  </PopoverContent>
-                                </Popover>
+                          {editingExpense && (
+                            <div className="space-y-4 py-4">
+                              <div className="grid grid-cols-4 items-center gap-4">
+                                <label className="text-right text-sm font-medium">
+                                  Tanggal
+                                </label>
+                                <div className="col-span-3">
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        id="date-picker"
+                                        variant="outline"
+                                        className="w-full justify-start text-left font-normal"
+                                      >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {editingExpense?.data.date ? (
+                                          format(editingExpense.data.date, "dd MMMM yyyy")
+                                        ) : (
+                                          format(new Date(expense.date), "dd MMMM yyyy")
+                                        )}
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                      <Calendar
+                                        mode="single"
+                                        selected={editingExpense?.data.date}
+                                        onSelect={handleEditDateChange}
+                                        initialFocus
+                                        className="p-3 pointer-events-auto"
+                                      />
+                                    </PopoverContent>
+                                  </Popover>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-4 items-center gap-4">
+                                <label htmlFor="edit-type" className="text-right text-sm font-medium">
+                                  Jenis
+                                </label>
+                                <Select 
+                                  value={editingExpense.data.type}
+                                  onValueChange={(value) => handleInputChange("type", value)}
+                                >
+                                  <SelectTrigger className="col-span-3">
+                                    <SelectValue placeholder="Pilih jenis pengeluaran" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Belanja Bahan">Belanja Bahan</SelectItem>
+                                    <SelectItem value="Upah Pegawai">Upah Pegawai</SelectItem>
+                                    <SelectItem value="Marketing">Marketing</SelectItem>
+                                    <SelectItem value="Maintenance">Maintenance</SelectItem>
+                                    <SelectItem value="Bagi Hasil">Bagi Hasil</SelectItem>
+                                    <SelectItem value="Iuran">Iuran</SelectItem>
+                                    <SelectItem value="Lainnya">Lainnya</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="grid grid-cols-4 items-center gap-4">
+                                <label htmlFor="edit-description" className="text-right text-sm font-medium">
+                                  Deskripsi
+                                </label>
+                                <Input
+                                  id="edit-description"
+                                  value={editingExpense.data.description}
+                                  className="col-span-3"
+                                  onChange={(e) => handleInputChange("description", e.target.value)}
+                                />
+                              </div>
+                              <div className="grid grid-cols-4 items-center gap-4">
+                                <label htmlFor="edit-amount" className="text-right text-sm font-medium">
+                                  Nominal
+                                </label>
+                                <Input
+                                  id="edit-amount"
+                                  type="number"
+                                  value={editingExpense.data.amount}
+                                  className="col-span-3"
+                                  onChange={(e) => handleInputChange("amount", Number(e.target.value))}
+                                />
                               </div>
                             </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                              <label htmlFor="edit-type" className="text-right text-sm font-medium">
-                                Jenis
-                              </label>
-                              <Select 
-                                defaultValue={expense.type}
-                                onValueChange={(value) => handleInputChange("type", value)}
-                              >
-                                <SelectTrigger className="col-span-3">
-                                  <SelectValue placeholder="Pilih jenis pengeluaran" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Belanja Bahan">Belanja Bahan</SelectItem>
-                                  <SelectItem value="Upah Pegawai">Upah Pegawai</SelectItem>
-                                  <SelectItem value="Marketing">Marketing</SelectItem>
-                                  <SelectItem value="Maintenance">Maintenance</SelectItem>
-                                  <SelectItem value="Bagi Hasil">Bagi Hasil</SelectItem>
-                                  <SelectItem value="Iuran">Iuran</SelectItem>
-                                  <SelectItem value="Lainnya">Lainnya</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                              <label htmlFor="edit-description" className="text-right text-sm font-medium">
-                                Deskripsi
-                              </label>
-                              <Input
-                                id="edit-description"
-                                defaultValue={expense.description}
-                                className="col-span-3"
-                                onChange={(e) => handleInputChange("description", e.target.value)}
-                              />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                              <label htmlFor="edit-amount" className="text-right text-sm font-medium">
-                                Nominal
-                              </label>
-                              <Input
-                                id="edit-amount"
-                                type="number"
-                                defaultValue={expense.amount}
-                                className="col-span-3"
-                                onChange={(e) => handleInputChange("amount", Number(e.target.value))}
-                              />
-                            </div>
-                          </div>
+                          )}
                           <DialogFooter>
+                            <Button variant="outline" onClick={handleCancelEdit}>
+                              Batal
+                            </Button>
                             <Button type="submit" onClick={handleSaveEdit}>
                               Simpan
                             </Button>

@@ -3,17 +3,17 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
-  ChartBarIcon, 
-  CalendarIcon, 
-  ChevronDownIcon,
-  ArrowRightOnRectangleIcon,
-  Bars3Icon,
-  XMarkIcon,
-  BanknotesIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  DocumentChartBarIcon
-} from "@heroicons/react/24/outline";
+  BarChart3, 
+  CalendarDays, 
+  ChevronDown,
+  LogOut,
+  Menu,
+  X,
+  Banknote,
+  TrendingUp,
+  TrendingDown,
+  FileBarChart
+} from "lucide-react";
 import { useBusinessResolver } from "@/hooks/business/useBusinessResolver";
 
 interface DashboardLayoutProps {
@@ -65,7 +65,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             onClick={() => setIsSidebarOpen(false)}
             className="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 lg:hidden"
           >
-            <XMarkIcon className="h-6 w-6" />
+            <X className="h-6 w-6" />
           </button>
         </div>
 
@@ -94,7 +94,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-700"
             )}
           >
-            <BanknotesIcon className="mr-3 h-5 w-5" />
+            <Banknote className="mr-3 h-5 w-5" />
             <span>Ringkasan Kas</span>
           </NavLink>
 
@@ -107,7 +107,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-700"
             )}
           >
-            <ArrowTrendingUpIcon className="mr-3 h-5 w-5" />
+            <TrendingUp className="mr-3 h-5 w-5" />
             <span>Pendapatan</span>
           </NavLink>
 
@@ -120,7 +120,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-700"
             )}
           >
-            <ArrowTrendingDownIcon className="mr-3 h-5 w-5" />
+            <TrendingDown className="mr-3 h-5 w-5" />
             <span>Pengeluaran</span>
           </NavLink>
 
@@ -133,7 +133,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-700"
             )}
           >
-            <DocumentChartBarIcon className="mr-3 h-5 w-5" />
+            <FileBarChart className="mr-3 h-5 w-5" />
             <span>Laporan</span>
           </NavLink>
         </nav>
@@ -149,7 +149,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               onClick={() => setIsSidebarOpen(true)}
               className="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 lg:hidden"
             >
-              <Bars3Icon className="h-6 w-6" />
+              <Menu className="h-6 w-6" />
             </button>
 
             <div className="flex-1 lg:pl-2">
@@ -168,7 +168,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <span className="text-sm font-medium text-gray-600">A</span>
                 </div>
                 <span className="hidden text-sm font-medium text-gray-700 lg:block">Admin</span>
-                <ChevronDownIcon className="h-4 w-4 text-gray-500" />
+                <ChevronDown className="h-4 w-4 text-gray-500" />
               </button>
 
               {/* Dropdown menu */}
@@ -179,7 +179,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setIsDropdownOpen(false)}
                   >
-                    <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
+                    <LogOut className="mr-3 h-5 w-5" />
                     <span>Keluar</span>
                   </Link>
                 </div>

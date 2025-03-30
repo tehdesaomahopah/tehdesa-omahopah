@@ -157,11 +157,11 @@ const Index = () => {
                   <span>Teh Desa Cijati</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#E25822" }}></div>
                   <span>Teh Desa Shaquilla</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#DDA0DD" }}></div>
                   <span>Teh Desa Kartini</span>
                 </div>
               </div>

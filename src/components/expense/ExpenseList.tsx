@@ -251,7 +251,7 @@ const ExpenseList = ({
             {currentExpenses.length > 0 ? (
               currentExpenses.map((expense) => (
                 <TableRow key={expense.id}>
-                  <TableCell>{format(new Date(expense.date), "dd MMMM yyyy", { locale: id })}</TableCell>
+                  <TableCell>{format(new Date(expense.date + "T00:00:00"), "dd/MM/yyyy", { locale: id })}</TableCell>
                   <TableCell>
                     <span className={cn(
                       "inline-block px-2 py-1 rounded text-xs font-medium",

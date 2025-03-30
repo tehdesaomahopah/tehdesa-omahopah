@@ -72,13 +72,9 @@ const Index = () => {
       <div className="container mx-auto py-8 px-4">
         <header className="mb-10 text-center">
           <h1 className="text-4xl font-bold text-green-800 mb-2">Teh Desa Omah-Opah</h1>
-          <p className="text-green-600 mb-4">Aplikasi Manajemen Keuangan</p>
+          <p className="text-green-600 mb-4">Aplikasi manajemen keuangan yang dirancang untuk mencatat, mengelola, dan menganalisis arus kas dari usaha Omah-Opah. Aplikasi ini hadir untuk membantu usaha berkembang dengan lebih tertata, transparan, dan berdaya saing dalam perjalanan menuju kesuksesan.</p>
           <div className="max-w-3xl mx-auto">
-            <p className="text-gray-700 mb-4">
-              Aplikasi manajemen keuangan yang dirancang untuk mencatat, mengelola, dan menganalisis arus kas dari usaha Omah-Opah. 
-              Aplikasi ini hadir untuk membantu usaha berkembang dengan lebih tertata, transparan, dan berdaya saing dalam perjalanan menuju kesuksesan.
-            </p>
-            <p className="text-gray-700 font-bold italic">
+            <p className="text-green-700 font-bold italic">
               Seperti filosofi Desa, usaha ini dilakukan dengan penuh ketenangan dan kebersamaan
             </p>
           </div>

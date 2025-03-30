@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval } from "date-fns";
@@ -30,13 +31,11 @@ const Reports = () => {
   // Calculate date range based on filter
   const dateRange = useMemo(() => {
     if (filterType === 'month') {
-      // Fix: Convert selectedYear to number before using it in Date constructor
-      const firstDayOfMonth = startOfMonth(new Date(`${selectedYear}-${selectedMonth}-01`));
+      const firstDayOfMonth = startOfMonth(new Date(parseInt(selectedYear), parseInt(selectedMonth) - 1, 1));
       const lastDayOfMonth = endOfMonth(firstDayOfMonth);
       return { from: firstDayOfMonth, to: lastDayOfMonth };
     } else {
-      // Fix: Convert selectedYear to number before using it in Date constructor
-      const firstDayOfYear = startOfYear(new Date(`${selectedYear}-01-01`));
+      const firstDayOfYear = startOfYear(new Date(parseInt(selectedYear), 0, 1));
       const lastDayOfYear = endOfYear(firstDayOfYear);
       return { from: firstDayOfYear, to: lastDayOfYear };
     }
@@ -68,12 +67,7 @@ const Reports = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   
-  // Available years and months for selection
-  const availableYears = useMemo(() => {
-    const currentYear = new Date().getFullYear();
-    return Array.from({ length: 5 }, (_, i) => (currentYear - 2 + i).toString());
-  }, []);
-  
+  // Define months in Indonesian (for display)
   const months = [
     { value: '01', label: 'Januari' },
     { value: '02', label: 'Februari' },
@@ -320,85 +314,46 @@ const Reports = () => {
         <p className="text-gray-600">Lihat laporan keuangan usaha Anda</p>
       </div>
       
-      {/* Filter Controls */}
+      {/* 1. Filter Controls - first */}
       <div className="mb-6">
-        <DateFilterSelector
-          filterType={filterType}
-          selectedMonth={selectedMonth}
-          selectedYear={selectedYear}
-          onFilterTypeChange={setFilterType}
-          onMonthChange={setSelectedMonth}
-          onYearChange={setSelectedYear}
-        />
-        
-        <div className="mt-4 flex justify-end">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={downloadCSV}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Unduh Laporan CSV
-          </Button>
-        </div>
-      </div>
-      
-      {/* Chart Section - Full Width */}
-      <div className="grid grid-cols-1 gap-6 mb-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Grafik Pendapatan dan Pengeluaran</CardTitle>
-            <CardDescription>
-              Periode: {periodText}
-            </CardDescription>
+        <Card className="border-gray-200 shadow">
+          <CardHeader className="bg-gray-50 border-b border-gray-100">
+            <CardTitle className="text-xl">Filter Laporan</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-[400px] w-full">
-              {isLoadingIncome || isLoadingExpenses ? (
-                <div className="flex items-center justify-center h-full">
-                  <p>Memuat data...</p>
-                </div>
-              ) : chartData.length > 0 ? (
-                <BarChart 
-                  data={chartData} 
-                  dataKeys={["Pendapatan", "Pengeluaran", "Saldo"]}
-                  colors={["#10b981", "#ef4444", "#3b82f6"]} 
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p>Tidak ada data dalam periode yang dipilih.</p>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex justify-center mt-4 gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span>Pendapatan</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <span>Pengeluaran</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                <span>Saldo</span>
-              </div>
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <DateFilterSelector
+                filterType={filterType}
+                selectedMonth={selectedMonth}
+                selectedYear={selectedYear}
+                onFilterTypeChange={setFilterType}
+                onMonthChange={setSelectedMonth}
+                onYearChange={setSelectedYear}
+              />
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={downloadCSV}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Unduh Laporan CSV
+              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
       
-      {/* Statistics Section - Full Width */}
-      <div className="grid grid-cols-1 gap-6 mb-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Statistik Keuangan</CardTitle>
+      {/* 2. Statistics Section - second */}
+      <div className="mb-6">
+        <Card className="border-gray-200 shadow">
+          <CardHeader className="bg-gray-50 border-b border-gray-100">
+            <CardTitle className="text-xl">Statistik Keuangan</CardTitle>
             <CardDescription>
               Rangkuman statistik keuangan pada periode {periodText}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-green-50 p-4 rounded-lg">
                 <p className="text-sm font-medium text-green-800">Total Pendapatan</p>
@@ -440,17 +395,63 @@ const Reports = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* 3. Chart Section - third */}
+      <div className="mb-6">
+        <Card className="border-gray-200 shadow">
+          <CardHeader className="bg-gray-50 border-b border-gray-100">
+            <CardTitle className="text-xl">Grafik Pendapatan dan Pengeluaran</CardTitle>
+            <CardDescription>
+              Periode: {periodText}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="h-[400px] w-full">
+              {isLoadingIncome || isLoadingExpenses ? (
+                <div className="flex items-center justify-center h-full">
+                  <p>Memuat data...</p>
+                </div>
+              ) : chartData.length > 0 ? (
+                <BarChart 
+                  data={chartData} 
+                  dataKeys={["Pendapatan", "Pengeluaran", "Saldo"]}
+                  colors={["#10b981", "#ef4444", "#3b82f6"]} 
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p>Tidak ada data dalam periode yang dipilih.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-center mt-4 gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                <span>Pendapatan</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                <span>Pengeluaran</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                <span>Saldo</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
       
-      {/* Transactions Table - Full Width */}
-      <div className="grid grid-cols-1 gap-6 mb-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Transaksi Detail</CardTitle>
+      {/* 4. Transactions Table - last */}
+      <div className="mb-6">
+        <Card className="border-gray-200 shadow">
+          <CardHeader className="bg-gray-50 border-b border-gray-100">
+            <CardTitle className="text-xl">Transaksi Detail</CardTitle>
             <CardDescription>
               Daftar seluruh transaksi pada periode {periodText}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="rounded-md border">
               <Table>
                 <TableHeader>

@@ -55,10 +55,10 @@ const IncomeForm = ({ businessId, onSubmit, isPending, onCancel }: IncomeFormPro
     // Parse amount to number
     const numericAmount = parseInt(formData.amount.replace(/[^0-9]/g, ""), 10);
     
-    // Create new income entry with exact selected date
+    // Create new income entry with exact selected date (use selected date directly)
     const newIncome = {
       businessId,
-      date: formData.date,
+      date: formData.date, // Use the date directly without modifications
       type: formData.type,
       description: formData.description,
       amount: numericAmount,

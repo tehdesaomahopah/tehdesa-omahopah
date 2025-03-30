@@ -8,6 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { BarChart } from "@/components/ui/charts";
 import { useIncomeComparison } from "@/hooks/income/useIncomeComparison";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import DateFilterSelector from "@/components/filters/DateFilterSelector";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -17,61 +18,9 @@ const Index = () => {
   const [viewType, setViewType] = useState<"monthly" | "yearly">("monthly");
   
   // Month and Year selections
-  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'MM'));
+  const [selectedYear, setSelectedYear] = useState<string>(format(new Date(), 'yyyy'));
   
-  // Calculate date range based on view type and selections
-  const [dateRange, setDateRange] = useState<{
-    from: Date;
-    to: Date;
-  }>(() => {
-    if (viewType === "monthly") {
-      const currentDate = new Date(selectedYear, selectedMonth);
-      return {
-        from: startOfMonth(currentDate),
-        to: endOfMonth(currentDate),
-      };
-    } else {
-      return {
-        from: startOfYear(new Date(selectedYear, 0)),
-        to: endOfYear(new Date(selectedYear, 0)),
-      };
-    }
-  });
-
-  // Update date range when selections change
-  useEffect(() => {
-    if (viewType === "monthly") {
-      const monthDate = new Date(selectedYear, selectedMonth);
-      setDateRange({
-        from: startOfMonth(monthDate),
-        to: endOfMonth(monthDate),
-      });
-    } else {
-      setDateRange({
-        from: startOfYear(new Date(selectedYear, 0)),
-        to: endOfYear(new Date(selectedYear, 0)),
-      });
-    }
-  }, [viewType, selectedMonth, selectedYear]);
-
-  // Update date range when view type changes
-  const handleViewTypeChange = useCallback((value: "monthly" | "yearly") => {
-    setViewType(value);
-    if (value === "monthly") {
-      const monthDate = new Date(selectedYear, selectedMonth);
-      setDateRange({
-        from: startOfMonth(monthDate),
-        to: endOfMonth(monthDate),
-      });
-    } else {
-      setDateRange({
-        from: startOfYear(new Date(selectedYear, 0)),
-        to: endOfYear(new Date(selectedYear, 0)),
-      });
-    }
-  }, [selectedMonth, selectedYear]);
-
   const businesses = [
     { id: "cijati", name: "Teh Desa Cijati", image: "/lovable-uploads/f9c2176e-769a-418b-b132-effcf585d9d2.png" },
     { id: "shaquilla", name: "Teh Desa Shaquilla", image: "/lovable-uploads/6e49ba5d-9a6a-4856-8ced-cf1ec2227d64.png" },
@@ -81,32 +30,42 @@ const Index = () => {
   const { 
     chartData, 
     isLoading: isLoadingIncomeData 
-  } = useIncomeComparison(businesses.map(b => b.id), dateRange.from, dateRange.to);
+  } = useIncomeComparison(
+    businesses.map(b => b.id), 
+    viewType, 
+    parseInt(selectedMonth) - 1, 
+    parseInt(selectedYear)
+  );
 
   const handleBusinessSelect = (businessId: string) => {
     // Navigate to the dashboard for the selected business
     navigate(`/dashboard/${businessId}/cash`);
   };
 
-  // Generate month options
+  // Handle filter type change
+  const handleFilterTypeChange = (value: 'month' | 'year') => {
+    setViewType(value === 'month' ? 'monthly' : 'yearly');
+  };
+
+  // Period text for display
   const months = [
-    { value: 0, label: "Januari" },
-    { value: 1, label: "Februari" },
-    { value: 2, label: "Maret" },
-    { value: 3, label: "April" },
-    { value: 4, label: "Mei" },
-    { value: 5, label: "Juni" },
-    { value: 6, label: "Juli" },
-    { value: 7, label: "Agustus" },
-    { value: 8, label: "September" },
-    { value: 9, label: "Oktober" },
-    { value: 10, label: "November" },
-    { value: 11, label: "Desember" }
+    { value: '01', label: 'Januari' },
+    { value: '02', label: 'Februari' },
+    { value: '03', label: 'Maret' },
+    { value: '04', label: 'April' },
+    { value: '05', label: 'Mei' },
+    { value: '06', label: 'Juni' },
+    { value: '07', label: 'Juli' },
+    { value: '08', label: 'Agustus' },
+    { value: '09', label: 'September' },
+    { value: '10', label: 'Oktober' },
+    { value: '11', label: 'November' },
+    { value: '12', label: 'Desember' }
   ];
 
-  // Generate year options (last 5 years to next 5 years)
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
+  const periodText = viewType === 'monthly' 
+    ? `${months.find(m => m.value === selectedMonth)?.label} ${selectedYear}`
+    : `Tahun ${selectedYear}`;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-green-100">
@@ -150,58 +109,19 @@ const Index = () => {
               <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div>
                   <CardTitle className="text-2xl text-green-800">Perbandingan Pendapatan</CardTitle>
-                  <CardDescription>Perbandingan pendapatan dari ketiga usaha</CardDescription>
+                  <CardDescription>
+                    Periode: {periodText}
+                  </CardDescription>
                 </div>
-                <div className="flex items-center gap-4">
-                  {/* View type selector */}
-                  <Select
-                    value={viewType}
-                    onValueChange={(value) => handleViewTypeChange(value as "monthly" | "yearly")}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Pilih periode" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="monthly">Bulanan</SelectItem>
-                      <SelectItem value="yearly">Tahunan</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  {/* Month selector (only shown when viewType is monthly) */}
-                  {viewType === "monthly" && (
-                    <Select
-                      value={selectedMonth.toString()}
-                      onValueChange={(value) => setSelectedMonth(parseInt(value))}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Pilih bulan" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {months.map((month) => (
-                          <SelectItem key={month.value} value={month.value.toString()}>
-                            {month.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  
-                  {/* Year selector */}
-                  <Select
-                    value={selectedYear.toString()}
-                    onValueChange={(value) => setSelectedYear(parseInt(value))}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Pilih tahun" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {years.map((year) => (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div>
+                  <DateFilterSelector
+                    filterType={viewType === 'monthly' ? 'month' : 'year'}
+                    selectedMonth={selectedMonth}
+                    selectedYear={selectedYear}
+                    onFilterTypeChange={handleFilterTypeChange}
+                    onMonthChange={setSelectedMonth}
+                    onYearChange={setSelectedYear}
+                  />
                 </div>
               </div>
             </CardHeader>

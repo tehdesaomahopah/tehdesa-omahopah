@@ -33,7 +33,12 @@ export const BarChart = ({
     >
       <RechartsBarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
+        <XAxis 
+          dataKey="name" 
+          tick={{ fontSize: 12 }}
+          height={60}
+          tickMargin={10}
+        />
         <YAxis />
         <ChartTooltip content={<ChartTooltipContent />} />
         <Legend />
@@ -74,9 +79,15 @@ export const LineChart = ({
     >
       <RechartsLineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
+        <XAxis 
+          dataKey="name" 
+          tick={{ fontSize: 12 }}
+          height={60}
+          tickMargin={10}
+        />
         <YAxis />
         <ChartTooltip content={<ChartTooltipContent />} />
+        <Legend />
         <Line type="monotone" dataKey={dataKey} stroke={stroke} activeDot={{ r: 8 }} />
         {dataKey2 && stroke2 && (
           <Line type="monotone" dataKey={dataKey2} stroke={stroke2} />
@@ -99,6 +110,7 @@ export const PieChart = ({ data, dataKey, nameKey }: { data: any[]; dataKey: str
     >
       <RechartsPieChart margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
         <ChartTooltip content={<ChartTooltipContent />} />
+        <Legend />
         <Pie
           data={data}
           cx="50%"
@@ -113,7 +125,6 @@ export const PieChart = ({ data, dataKey, nameKey }: { data: any[]; dataKey: str
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
-        <Legend />
       </RechartsPieChart>
     </ChartContainer>
   );

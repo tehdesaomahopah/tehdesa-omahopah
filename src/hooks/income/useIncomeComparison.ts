@@ -2,24 +2,37 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO, isWithinInterval, eachDayOfInterval, startOfMonth, endOfMonth, startOfYear, endOfYear, getDate } from "date-fns";
+import { id } from 'date-fns/locale';
 import { supabase } from "@/integrations/supabase/client";
 import { mapIncomeFromRow } from "@/types/supabase";
 
-export const useIncomeComparison = (businessIds: string[], fromDate: Date, toDate: Date) => {
-  // Determine if we're using monthly or yearly view
-  const diffDays = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24));
-  const useYearlyGrouping = diffDays > 100; // If more than ~3 months, use yearly grouping
+export const useIncomeComparison = (businessIds: string[], viewType: "monthly" | "yearly", selectedMonth: number, selectedYear: number) => {
+  // Calculate date range based on view type and selections
+  const dateRange = useMemo(() => {
+    if (viewType === "monthly") {
+      const monthDate = new Date(selectedYear, selectedMonth);
+      return {
+        from: startOfMonth(monthDate),
+        to: endOfMonth(monthDate),
+      };
+    } else {
+      return {
+        from: startOfYear(new Date(selectedYear, 0)),
+        to: endOfYear(new Date(selectedYear, 0)),
+      };
+    }
+  }, [viewType, selectedMonth, selectedYear]);
 
   // Fetch income data from Supabase for all businesses
   const { data: incomesData, isLoading, error } = useQuery({
-    queryKey: ['incomes-comparison', businessIds, fromDate.toISOString(), toDate.toISOString()],
+    queryKey: ['incomes-comparison', businessIds, dateRange.from.toISOString(), dateRange.to.toISOString()],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('incomes')
         .select('*')
         .in('business_id', businessIds)
-        .gte('date', fromDate.toISOString())
-        .lte('date', toDate.toISOString());
+        .gte('date', dateRange.from.toISOString())
+        .lte('date', dateRange.to.toISOString());
         
       if (error) {
         console.error("Error fetching incomes:", error);
@@ -34,106 +47,86 @@ export const useIncomeComparison = (businessIds: string[], fromDate: Date, toDat
   const chartData = useMemo(() => {
     if (!incomesData) return [];
 
-    // Group by month or year depending on the date range
-    if (useYearlyGrouping) {
-      // Group by year
-      const yearlyData = businessIds.reduce((acc, businessId) => {
+    // Define months in Indonesian
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+
+    if (viewType === "yearly") {
+      // Group by month for yearly view
+      const monthlyData = businessIds.reduce((acc, businessId) => {
         const businessIncomes = incomesData.filter(income => income.businessId === businessId);
         
-        businessIncomes.forEach(income => {
-          const year = new Date(income.date).getFullYear();
-          const yearKey = `${year}`;
+        // Initialize all months
+        months.forEach((monthName, index) => {
+          const monthKey = monthName;
           
-          if (!acc[yearKey]) {
-            acc[yearKey] = businessIds.reduce((businessAcc, id) => {
+          if (!acc[monthKey]) {
+            acc[monthKey] = businessIds.reduce((businessAcc, id) => {
               businessAcc[id === 'cijati' ? 'Cijati' : id === 'shaquilla' ? 'Shaquilla' : 'Kartini'] = 0;
               return businessAcc;
-            }, { name: yearKey } as Record<string, any>);
+            }, { name: monthKey } as Record<string, any>);
           }
+        });
+        
+        // Aggregate income by month
+        businessIncomes.forEach(income => {
+          const monthIndex = new Date(income.date).getMonth();
+          const monthName = months[monthIndex];
           
-          const businessKey = businessId === 'cijati' ? 'Cijati' : businessId === 'shaquilla' ? 'Shaquilla' : 'Kartini';
-          acc[yearKey][businessKey] += Number(income.amount);
+          if (acc[monthName]) {
+            const businessKey = businessId === 'cijati' ? 'Cijati' : businessId === 'shaquilla' ? 'Shaquilla' : 'Kartini';
+            acc[monthName][businessKey] += Number(income.amount);
+          }
         });
         
         return acc;
       }, {} as Record<string, Record<string, any>>);
       
-      return Object.values(yearlyData).sort((a, b) => {
-        const yearA = parseInt(a.name);
-        const yearB = parseInt(b.name);
-        return yearA - yearB;
+      // Convert to array and sort by month order
+      return Object.values(monthlyData).sort((a, b) => {
+        const indexA = months.indexOf(a.name);
+        const indexB = months.indexOf(b.name);
+        return indexA - indexB;
       });
     } else {
-      // Group by day or month depending on date range
-      const isMonthView = diffDays <= 31;
+      // Group by day for monthly view
+      const dailyData = businessIds.reduce((acc, businessId) => {
+        const businessIncomes = incomesData.filter(income => income.businessId === businessId);
+        
+        // Create entries for all days in the range
+        const days = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
+        days.forEach(day => {
+          const dayKey = format(day, 'dd');
+          
+          if (!acc[dayKey]) {
+            acc[dayKey] = businessIds.reduce((businessAcc, id) => {
+              businessAcc[id === 'cijati' ? 'Cijati' : id === 'shaquilla' ? 'Shaquilla' : 'Kartini'] = 0;
+              return businessAcc;
+            }, { name: dayKey } as Record<string, any>);
+          }
+        });
+        
+        // Add income data to the corresponding days
+        businessIncomes.forEach(income => {
+          const dayKey = format(new Date(income.date), 'dd');
+          const businessKey = businessId === 'cijati' ? 'Cijati' : businessId === 'shaquilla' ? 'Shaquilla' : 'Kartini';
+          
+          if (acc[dayKey]) {
+            acc[dayKey][businessKey] += Number(income.amount);
+          }
+        });
+        
+        return acc;
+      }, {} as Record<string, Record<string, any>>);
       
-      if (isMonthView) {
-        // Group by day for monthly view
-        const dailyData = businessIds.reduce((acc, businessId) => {
-          const businessIncomes = incomesData.filter(income => income.businessId === businessId);
-          
-          // Create entries for all days in the range
-          const days = eachDayOfInterval({ start: fromDate, end: toDate });
-          days.forEach(day => {
-            const dayKey = format(day, 'dd/MM');
-            
-            if (!acc[dayKey]) {
-              acc[dayKey] = businessIds.reduce((businessAcc, id) => {
-                businessAcc[id === 'cijati' ? 'Cijati' : id === 'shaquilla' ? 'Shaquilla' : 'Kartini'] = 0;
-                return businessAcc;
-              }, { name: dayKey } as Record<string, any>);
-            }
-          });
-          
-          // Add income data to the corresponding days
-          businessIncomes.forEach(income => {
-            const dayKey = format(new Date(income.date), 'dd/MM');
-            const businessKey = businessId === 'cijati' ? 'Cijati' : businessId === 'shaquilla' ? 'Shaquilla' : 'Kartini';
-            
-            if (acc[dayKey]) {
-              acc[dayKey][businessKey] += Number(income.amount);
-            }
-          });
-          
-          return acc;
-        }, {} as Record<string, Record<string, any>>);
-        
-        // Sort by day of month
-        return Object.values(dailyData).sort((a, b) => {
-          const dayA = parseInt(a.name.split('/')[0]);
-          const dayB = parseInt(b.name.split('/')[0]);
-          return dayA - dayB;
-        });
-      } else {
-        // Group by month for yearly view
-        const monthlyData = businessIds.reduce((acc, businessId) => {
-          const businessIncomes = incomesData.filter(income => income.businessId === businessId);
-          
-          businessIncomes.forEach(income => {
-            const monthKey = format(new Date(income.date), 'MMM yyyy');
-            
-            if (!acc[monthKey]) {
-              acc[monthKey] = businessIds.reduce((businessAcc, id) => {
-                businessAcc[id === 'cijati' ? 'Cijati' : id === 'shaquilla' ? 'Shaquilla' : 'Kartini'] = 0;
-                return businessAcc;
-              }, { name: monthKey } as Record<string, any>);
-            }
-            
-            const businessKey = businessId === 'cijati' ? 'Cijati' : businessId === 'shaquilla' ? 'Shaquilla' : 'Kartini';
-            acc[monthKey][businessKey] += Number(income.amount);
-          });
-          
-          return acc;
-        }, {} as Record<string, Record<string, any>>);
-        
-        return Object.values(monthlyData).sort((a, b) => {
-          const dateA = new Date(a.name);
-          const dateB = new Date(b.name);
-          return dateA.getTime() - dateB.getTime();
-        });
-      }
+      // Sort by day of month
+      return Object.values(dailyData).sort((a, b) => {
+        return parseInt(a.name) - parseInt(b.name);
+      });
     }
-  }, [incomesData, businessIds, useYearlyGrouping, diffDays, fromDate, toDate]);
+  }, [incomesData, businessIds, viewType, dateRange]);
 
   return {
     chartData,

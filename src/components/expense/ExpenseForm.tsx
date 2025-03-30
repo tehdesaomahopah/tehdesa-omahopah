@@ -55,10 +55,10 @@ const ExpenseForm = ({ businessId, onSubmit, isPending, onCancel }: ExpenseFormP
     // Parse amount to number
     const numericAmount = parseInt(formData.amount.replace(/[^0-9]/g, ""), 10);
     
-    // Create new expense entry with exact selected date
+    // Create new expense entry with exact selected date (use selected date directly)
     const newExpense = {
       businessId,
-      date: formData.date,
+      date: formData.date, // Use the date directly without modifications
       type: formData.type,
       description: formData.description,
       amount: numericAmount,

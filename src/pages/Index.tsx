@@ -147,7 +147,7 @@ const Index = () => {
                   <BarChart 
                     data={chartData}
                     dataKeys={["Cijati", "Shaquilla", "Kartini"]}
-                    colors={["#10b981", "#B22222", "##DDA0DD"]} 
+                    colors={["#10b981", "#E25822", "#DDA0DD"]} 
                   />
                 )}
               </div>

@@ -56,9 +56,12 @@ const ExpenseForm = ({ businessId, onSubmit, isPending, onCancel }: ExpenseFormP
     const numericAmount = parseInt(formData.amount.replace(/[^0-9]/g, ""), 10);
     
     // Create new expense entry with the exact selected date
+    const localDate = new Date(formData.date);
+    localDate.setHours(12, 0, 0, 0); // Set ke tengah hari untuk menghindari pergeseran UTC
+
     const newExpense = {
       businessId,
-      date: formData.date, // Use the date directly
+      date: localDate, // Pastikan ini yang dikirim
       type: formData.type,
       description: formData.description,
       amount: numericAmount,

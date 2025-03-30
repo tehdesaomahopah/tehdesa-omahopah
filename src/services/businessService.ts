@@ -137,11 +137,12 @@ export async function addIncome(income: {
     income.businessId = business.id;
   }
 
+  // Ensure we send the exact date as provided by the form
   const { data, error } = await supabase
     .from('incomes')
     .insert([{
       business_id: income.businessId,
-      date: income.date.toISOString(),
+      date: income.date.toISOString(), // Use the exact date as provided
       type: income.type,
       description: income.description,
       amount: income.amount
@@ -173,11 +174,12 @@ export async function addExpense(expense: {
     expense.businessId = business.id;
   }
 
+  // Ensure we send the exact date as provided by the form
   const { data, error } = await supabase
     .from('expenses')
     .insert([{
       business_id: expense.businessId,
-      date: expense.date.toISOString(),
+      date: expense.date.toISOString(), // Use the exact date as provided
       type: expense.type,
       description: expense.description,
       amount: expense.amount
@@ -265,6 +267,7 @@ export async function updateIncome(id: string, income: {
 }): Promise<Income> {
   const updateData: any = {};
   
+  // Ensure date is handled correctly for updates 
   if (income.date) updateData.date = income.date.toISOString();
   if (income.type) updateData.type = income.type;
   if (income.description) updateData.description = income.description;
@@ -305,6 +308,7 @@ export async function updateExpense(id: string, expense: {
 }): Promise<Expense> {
   const updateData: any = {};
   
+  // Ensure date is handled correctly for updates
   if (expense.date) updateData.date = expense.date.toISOString();
   if (expense.type) updateData.type = expense.type;
   if (expense.description) updateData.description = expense.description;

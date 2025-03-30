@@ -271,7 +271,7 @@ const ExpenseList = ({
                     <div className="flex justify-end space-x-2">
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleEditClick(expense)}>
+                          <Button variant="outline" size="icon" className="h-8 w-8">
                             <Pencil className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
@@ -359,9 +359,6 @@ const ExpenseList = ({
                             </div>
                           </div>
                           <DialogFooter>
-                            <Button variant="outline" onClick={handleCancelEdit}>
-                              Batal
-                            </Button>
                             <Button type="submit" onClick={handleSaveEdit}>
                               Simpan
                             </Button>

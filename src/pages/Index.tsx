@@ -88,7 +88,7 @@ const Index = () => {
     navigate(`/dashboard/${businessId}/cash`);
   };
 
-  // Generate month options - in Indonesian
+  // Generate month options
   const months = [
     { value: 0, label: "Januari" },
     { value: 1, label: "Februari" },
@@ -152,7 +152,7 @@ const Index = () => {
                   <CardTitle className="text-2xl text-green-800">Perbandingan Pendapatan</CardTitle>
                   <CardDescription>Perbandingan pendapatan dari ketiga usaha</CardDescription>
                 </div>
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-4">
                   {/* View type selector */}
                   <Select
                     value={viewType}
@@ -223,7 +223,7 @@ const Index = () => {
                   />
                 )}
               </div>
-              <div className="flex flex-wrap justify-center mt-4 gap-4">
+              <div className="flex justify-center mt-4 gap-4">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
                   <span>Teh Desa Cijati</span>

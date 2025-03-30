@@ -2,7 +2,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO, isWithinInterval, eachDayOfInterval, startOfMonth, endOfMonth, startOfYear, endOfYear, getDate } from "date-fns";
-import { id } from "date-fns/locale"; // Indonesian locale
 import { supabase } from "@/integrations/supabase/client";
 import { mapIncomeFromRow } from "@/types/supabase";
 
@@ -76,8 +75,7 @@ export const useIncomeComparison = (businessIds: string[], fromDate: Date, toDat
           // Create entries for all days in the range
           const days = eachDayOfInterval({ start: fromDate, end: toDate });
           days.forEach(day => {
-            // Format as just the date number (1, 2, 3, etc.)
-            const dayKey = `${getDate(day)}`;
+            const dayKey = format(day, 'dd/MM');
             
             if (!acc[dayKey]) {
               acc[dayKey] = businessIds.reduce((businessAcc, id) => {
@@ -89,7 +87,7 @@ export const useIncomeComparison = (businessIds: string[], fromDate: Date, toDat
           
           // Add income data to the corresponding days
           businessIncomes.forEach(income => {
-            const dayKey = `${getDate(new Date(income.date))}`;
+            const dayKey = format(new Date(income.date), 'dd/MM');
             const businessKey = businessId === 'cijati' ? 'Cijati' : businessId === 'shaquilla' ? 'Shaquilla' : 'Kartini';
             
             if (acc[dayKey]) {
@@ -102,7 +100,9 @@ export const useIncomeComparison = (businessIds: string[], fromDate: Date, toDat
         
         // Sort by day of month
         return Object.values(dailyData).sort((a, b) => {
-          return parseInt(a.name) - parseInt(b.name);
+          const dayA = parseInt(a.name.split('/')[0]);
+          const dayB = parseInt(b.name.split('/')[0]);
+          return dayA - dayB;
         });
       } else {
         // Group by month for yearly view
@@ -110,8 +110,7 @@ export const useIncomeComparison = (businessIds: string[], fromDate: Date, toDat
           const businessIncomes = incomesData.filter(income => income.businessId === businessId);
           
           businessIncomes.forEach(income => {
-            // Format with Indonesian month names
-            const monthKey = format(new Date(income.date), "MMMM", { locale: id });
+            const monthKey = format(new Date(income.date), 'MMM yyyy');
             
             if (!acc[monthKey]) {
               acc[monthKey] = businessIds.reduce((businessAcc, id) => {
@@ -127,16 +126,10 @@ export const useIncomeComparison = (businessIds: string[], fromDate: Date, toDat
           return acc;
         }, {} as Record<string, Record<string, any>>);
         
-        // Map of month names to their numeric values for sorting
-        const monthOrder: Record<string, number> = {
-          "Januari": 0, "Februari": 1, "Maret": 2, "April": 3, 
-          "Mei": 4, "Juni": 5, "Juli": 6, "Agustus": 7, 
-          "September": 8, "Oktober": 9, "November": 10, "Desember": 11
-        };
-        
-        // Sort by month order
         return Object.values(monthlyData).sort((a, b) => {
-          return monthOrder[a.name] - monthOrder[b.name];
+          const dateA = new Date(a.name);
+          const dateB = new Date(b.name);
+          return dateA.getTime() - dateB.getTime();
         });
       }
     }

@@ -92,7 +92,7 @@ const ExpenseList = ({
   const handleEditDateChange = (date: Date | undefined) => {
     if (date && editingExpense) {
       // Konversi ke zona waktu lokal sebelum menyimpan
-      const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       setEditingExpense({
         ...editingExpense,
         data: {

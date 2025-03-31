@@ -91,13 +91,12 @@ const ExpenseList = ({
   
   const handleEditDateChange = (date: Date | undefined) => {
     if (date && editingExpense) {
-      // Konversi ke zona waktu lokal sebelum menyimpan
-      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      // Make sure we preserve the exact selected date without any timezone adjustments
       setEditingExpense({
         ...editingExpense,
         data: {
           ...editingExpense.data,
-          date: localDate
+          date
         }
       });
     }
@@ -302,15 +301,11 @@ const ExpenseList = ({
                                       >
                                         <CalendarIcon className="mr-2 h-4 w-4" />
                                         {editingExpense?.data.date ? (
-                                          editingExpense.data.date.toLocaleDateString("id-ID", {
-                                            day: "2-digit",
-                                            month: "long",
-                                            year: "numeric"
-                                          })
+                                          format(editingExpense.data.date, "dd MMMM yyyy")
                                         ) : (
                                           format(new Date(expense.date), "dd MMMM yyyy")
                                         )}
-                                    </Button>
+                                      </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0">
                                       <Calendar

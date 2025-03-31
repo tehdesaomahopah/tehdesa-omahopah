@@ -10,11 +10,14 @@ import IncomeForm from "@/components/income/IncomeForm";
 import IncomeList from "@/components/income/IncomeList";
 import { useIncomeData } from "@/hooks/income/useIncomeData";
 import { Income } from "@/types/supabase";
+import { Dialog, DialogClose } from "@/components/ui/dialog";
+import { useRef } from "react";
 
 const IncomeManagement = () => {
   const { businessId } = useParams<{ businessId: string }>();
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const dialogCloseRef = useRef<HTMLButtonElement>(null);
   
   const { 
     incomes,
@@ -34,6 +37,10 @@ const IncomeManagement = () => {
   // Create wrapper functions with the correct types
   const handleUpdateIncome = (id: string, data: Partial<Income>) => {
     updateIncomeFunction({ id, data });
+    // Close any open dialogs
+    if (dialogCloseRef.current) {
+      dialogCloseRef.current.click();
+    }
   };
 
   const handleDeleteIncome = (id: string) => {
@@ -89,6 +96,11 @@ const IncomeManagement = () => {
               onCancel={() => setShowForm(false)}
             />
           )}
+          
+          {/* Hidden DialogClose element that will be triggered programmatically */}
+          <Dialog>
+            <DialogClose ref={dialogCloseRef} className="hidden" />
+          </Dialog>
 
           <IncomeList
             incomes={incomes} 

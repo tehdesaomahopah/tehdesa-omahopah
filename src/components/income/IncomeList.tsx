@@ -91,6 +91,7 @@ const IncomeList = ({
   
   const handleEditDateChange = (date: Date | undefined) => {
     if (date && editingIncome) {
+      // Make sure we preserve the exact selected date
       setEditingIncome({
         ...editingIncome,
         data: {

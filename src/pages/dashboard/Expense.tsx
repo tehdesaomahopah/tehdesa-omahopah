@@ -10,11 +10,14 @@ import ExpenseForm from "@/components/expense/ExpenseForm";
 import ExpenseList from "@/components/expense/ExpenseList";
 import { useExpenseData } from "@/hooks/expense/useExpenseData";
 import { Expense } from "@/types/supabase";
+import { Dialog, DialogClose } from "@/components/ui/dialog";
+import { useRef } from "react";
 
 const ExpenseManagement = () => {
   const { businessId } = useParams<{ businessId: string }>();
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const dialogCloseRef = useRef<HTMLButtonElement>(null);
   
   const { 
     expenses,
@@ -34,6 +37,10 @@ const ExpenseManagement = () => {
   // Create wrapper functions with the correct types
   const handleUpdateExpense = (id: string, data: Partial<Expense>) => {
     updateExpenseFunction({ id, data });
+    // Close any open dialogs
+    if (dialogCloseRef.current) {
+      dialogCloseRef.current.click();
+    }
   };
 
   const handleDeleteExpense = (id: string) => {
@@ -89,6 +96,11 @@ const ExpenseManagement = () => {
               onCancel={() => setShowForm(false)}
             />
           )}
+
+          {/* Hidden DialogClose element that will be triggered programmatically */}
+          <Dialog>
+            <DialogClose ref={dialogCloseRef} className="hidden" />
+          </Dialog>
 
           <ExpenseList
             expenses={expenses} 

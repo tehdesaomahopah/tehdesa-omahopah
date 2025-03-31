@@ -6,7 +6,8 @@ import {
   ArrowDownCircle, 
   Wallet, 
   FileText, 
-  ChevronLeft
+  ChevronLeft,
+  Home
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   const navigationItems = [
     { 
+      icon: Home, 
+      label: "Home", 
+      href: "/" 
+    },
+    { 
       icon: ArrowUpCircle, 
       label: "Pendapatan", 
       href: `/dashboard/${businessId}/income` 
@@ -62,12 +68,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       {/* Sidebar */}
       <div className="w-64 bg-white border-r border-gray-200 hidden md:block">
         <div className="p-4 border-b border-gray-200">
-          <Link to="/">
-            <Button variant="ghost" className="flex items-center gap-2 text-green-700">
-              <ChevronLeft size={16} />
-              <span>Kembali</span>
-            </Button>
-          </Link>
           <h2 className="text-xl font-semibold text-green-800 mt-4">{getBusinessName(businessId || '')}</h2>
         </div>
         <nav className="p-4">

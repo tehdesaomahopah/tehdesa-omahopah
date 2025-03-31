@@ -64,11 +64,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   ];
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 hidden md:block">
-        <div className="p-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-green-800 mt-4">{getBusinessName(businessId || '')}</h2>
+      <div className="w-64 bg-white border-r border-gray-200 shadow-sm hidden md:block">
+        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-green-700 to-green-600">
+          <h2 className="text-xl font-semibold text-white mt-4">{getBusinessName(businessId || '')}</h2>
         </div>
         <nav className="p-4">
           <ul className="space-y-2">
@@ -78,10 +78,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   to={item.href}
                   className={cn(
                     "flex items-center gap-2 p-2 rounded-md hover:bg-green-50 transition-colors",
-                    window.location.pathname === item.href ? "bg-green-100 text-green-800" : "text-gray-600"
+                    window.location.pathname === item.href
+                      ? "bg-gradient-to-r from-green-100 to-green-50 text-green-800 font-medium shadow-sm" 
+                      : "text-gray-600"
                   )}
                 >
-                  <item.icon size={18} />
+                  <item.icon size={18} className={window.location.pathname === item.href ? "text-green-600" : ""} />
                   <span>{item.label}</span>
                 </Link>
               </li>
@@ -91,7 +93,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       </div>
 
       {/* Mobile navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-10">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-10 shadow-lg">
         <div className="flex justify-around items-center">
           {navigationItems.map((item) => (
             <Link
@@ -99,7 +101,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               to={item.href}
               className={cn(
                 "flex flex-col items-center gap-1 p-3",
-                window.location.pathname === item.href ? "text-green-800" : "text-gray-600"
+                window.location.pathname === item.href 
+                  ? "text-green-700" 
+                  : "text-gray-600"
               )}
             >
               <item.icon size={20} />
@@ -111,7 +115,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
       {/* Main content */}
       <div className="flex-1 p-4 overflow-auto pb-20 md:pb-4">
-        {children}
+        <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-sm p-6">
+          {children}
+        </div>
       </div>
     </div>
   );

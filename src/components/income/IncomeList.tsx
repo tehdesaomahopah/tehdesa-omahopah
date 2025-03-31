@@ -6,7 +6,7 @@ import { Income } from "@/types/supabase";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, Pencil, Trash2, ArrowDown, ArrowUp, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -40,6 +40,8 @@ const IncomeList = ({
       amount: number;
     }
   } | null>(null);
+  
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   // Sorting state
   const [sortConfig, setSortConfig] = useState<{
@@ -103,6 +105,7 @@ const IncomeList = ({
   };
 
   const handleEditClick = (income: Income) => {
+    setIsDialogOpen(true);
     setEditingIncome({
       id: income.id,
       data: {
@@ -116,12 +119,14 @@ const IncomeList = ({
 
   const handleCancelEdit = () => {
     setEditingIncome(null);
+    setIsDialogOpen(false);
   };
 
   const handleSaveEdit = () => {
     if (editingIncome) {
       onUpdateIncome(editingIncome.id, editingIncome.data);
       setEditingIncome(null);
+      setIsDialogOpen(false);
     }
   };
 
@@ -266,7 +271,10 @@ const IncomeList = ({
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-2">
-                      <Dialog>
+                      <Dialog open={isDialogOpen && editingIncome?.id === income.id} onOpenChange={(open) => {
+                        if (!open) handleCancelEdit();
+                        setIsDialogOpen(open);
+                      }}>
                         <DialogTrigger asChild>
                           <Button 
                             variant="outline" 
@@ -281,7 +289,7 @@ const IncomeList = ({
                           <DialogHeader>
                             <DialogTitle>Edit Pendapatan</DialogTitle>
                           </DialogHeader>
-                          {editingIncome && (
+                          {editingIncome && editingIncome.id === income.id && (
                             <div className="space-y-4 py-4">
                               <div className="grid grid-cols-4 items-center gap-4">
                                 <label className="text-right text-sm font-medium">

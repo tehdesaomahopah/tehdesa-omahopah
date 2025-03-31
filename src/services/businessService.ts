@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { 
   Business, 
@@ -12,6 +13,12 @@ import {
 const isValidUUID = (id: string): boolean => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(id);
+};
+
+// Helper for date handling that preserves the exact date without timezone issues
+const formatDateForServer = (date: Date): string => {
+  // Format as YYYY-MM-DD to avoid timezone issues
+  return date.toISOString().split('T')[0];
 };
 
 // Helper to get business by name
@@ -137,12 +144,14 @@ export async function addIncome(income: {
     income.businessId = business.id;
   }
 
-  // Ensure we send the exact date as provided by the form
+  // Use YYYY-MM-DD format to avoid timezone issues
+  const formattedDate = formatDateForServer(income.date);
+  
   const { data, error } = await supabase
     .from('incomes')
     .insert([{
       business_id: income.businessId,
-      date: income.date.toISOString(), // Use the exact date as provided
+      date: formattedDate,
       type: income.type,
       description: income.description,
       amount: income.amount
@@ -174,12 +183,14 @@ export async function addExpense(expense: {
     expense.businessId = business.id;
   }
 
-  // Ensure we send the exact date as provided by the form
+  // Use YYYY-MM-DD format to avoid timezone issues
+  const formattedDate = formatDateForServer(expense.date);
+  
   const { data, error } = await supabase
     .from('expenses')
     .insert([{
       business_id: expense.businessId,
-      date: expense.date.toISOString(), // Use the exact date as provided
+      date: formattedDate,
       type: expense.type,
       description: expense.description,
       amount: expense.amount
@@ -196,11 +207,15 @@ export async function addExpense(expense: {
 }
 
 export async function getIncomesByDateRange(from: Date, to: Date, businessId?: string): Promise<Income[]> {
+  // Format dates to avoid timezone issues
+  const formattedFromDate = formatDateForServer(from);
+  const formattedToDate = formatDateForServer(to);
+  
   let query = supabase
     .from('incomes')
     .select('*')
-    .gte('date', from.toISOString())
-    .lte('date', to.toISOString());
+    .gte('date', formattedFromDate)
+    .lte('date', formattedToDate);
     
   if (businessId) {
     if (businessId !== 'all') {
@@ -228,11 +243,15 @@ export async function getIncomesByDateRange(from: Date, to: Date, businessId?: s
 }
 
 export async function getExpensesByDateRange(from: Date, to: Date, businessId?: string): Promise<Expense[]> {
+  // Format dates to avoid timezone issues
+  const formattedFromDate = formatDateForServer(from);
+  const formattedToDate = formatDateForServer(to);
+  
   let query = supabase
     .from('expenses')
     .select('*')
-    .gte('date', from.toISOString())
-    .lte('date', to.toISOString());
+    .gte('date', formattedFromDate)
+    .lte('date', formattedToDate);
     
   if (businessId) {
     if (businessId !== 'all') {
@@ -267,8 +286,10 @@ export async function updateIncome(id: string, income: {
 }): Promise<Income> {
   const updateData: any = {};
   
-  // Ensure date is handled correctly for updates 
-  if (income.date) updateData.date = income.date.toISOString();
+  // Ensure date is handled properly for updates
+  if (income.date) {
+    updateData.date = formatDateForServer(income.date);
+  }
   if (income.type) updateData.type = income.type;
   if (income.description) updateData.description = income.description;
   if (income.amount !== undefined) updateData.amount = income.amount;
@@ -308,8 +329,10 @@ export async function updateExpense(id: string, expense: {
 }): Promise<Expense> {
   const updateData: any = {};
   
-  // Ensure date is handled correctly for updates
-  if (expense.date) updateData.date = expense.date.toISOString();
+  // Ensure date is handled properly for updates
+  if (expense.date) {
+    updateData.date = formatDateForServer(expense.date);
+  }
   if (expense.type) updateData.type = expense.type;
   if (expense.description) updateData.description = expense.description;
   if (expense.amount !== undefined) updateData.amount = expense.amount;

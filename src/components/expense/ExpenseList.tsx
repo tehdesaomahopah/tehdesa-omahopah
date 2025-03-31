@@ -41,6 +41,8 @@ const ExpenseList = ({
     }
   } | null>(null);
 
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   // Sorting state
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Expense;
@@ -103,6 +105,7 @@ const ExpenseList = ({
   };
 
   const handleEditClick = (expense: Expense) => {
+    setIsDialogOpen(true);
     setEditingExpense({
       id: expense.id,
       data: {
@@ -116,12 +119,14 @@ const ExpenseList = ({
 
   const handleCancelEdit = () => {
     setEditingExpense(null);
+    setIsDialogOpen(false);
   };
 
   const handleSaveEdit = () => {
     if (editingExpense) {
       onUpdateExpense(editingExpense.id, editingExpense.data);
       setEditingExpense(null);
+      setIsDialogOpen(false);
     }
   };
 
@@ -270,7 +275,10 @@ const ExpenseList = ({
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-2">
-                      <Dialog>
+                      <Dialog open={isDialogOpen && editingExpense?.id === expense.id} onOpenChange={(open) => {
+                        if (!open) handleCancelEdit();
+                        setIsDialogOpen(open);
+                      }}>
                         <DialogTrigger asChild>
                           <Button 
                             variant="outline" 
@@ -285,7 +293,7 @@ const ExpenseList = ({
                           <DialogHeader>
                             <DialogTitle>Edit Pengeluaran</DialogTitle>
                           </DialogHeader>
-                          {editingExpense && (
+                          {editingExpense && editingExpense.id === expense.id && (
                             <div className="space-y-4 py-4">
                               <div className="grid grid-cols-4 items-center gap-4">
                                 <label className="text-right text-sm font-medium">

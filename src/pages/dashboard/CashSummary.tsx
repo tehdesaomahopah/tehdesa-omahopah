@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { CalendarIcon, ArrowRightLeft, TrendingUp, TrendingDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import DateFilterSelector from "@/components/filters/DateFilterSelector";
 
 // Helper to create date handling functions
 const createDateChangeHandler = (
@@ -28,12 +29,16 @@ const createDateChangeHandler = (
 
 const CashSummary = () => {
   const { businessId } = useParams<{ businessId: string }>();
-  const [activeTab, setActiveTab] = useState<'daily' | 'monthly'>('daily');
+  const [activeTab, setActiveTab] = useState<'daily' | 'monthly' | 'yearly'>('yearly'); // Changed default to yearly
   const [viewType, setViewType] = useState<"summary" | "detailed">("summary");
   const [dateRange, setDateRange] = useState(() => {
     const now = new Date();
     const from = new Date(now);
-    from.setDate(now.getDate() - 30);
+    
+    // For yearly view, set from to beginning of the year by default
+    from.setMonth(0);
+    from.setDate(1);
+    
     return { from, to: now };
   });
 
@@ -137,7 +142,7 @@ const CashSummary = () => {
         }));
       
       setChartData(chartData);
-    } else {
+    } else if (activeTab === 'monthly') {
       // Group by month for monthly view
       const dataByMonth = new Map<string, { income: number; expense: number }>();
       
@@ -166,6 +171,41 @@ const CashSummary = () => {
         .sort(([monthA], [monthB]) => new Date(monthA).getTime() - new Date(monthB).getTime())
         .map(([month, data]) => ({
           name: format(new Date(month), 'MMM yyyy'),
+          Pendapatan: data.income,
+          Pengeluaran: data.expense,
+          Saldo: data.income - data.expense
+        }));
+      
+      setChartData(chartData);
+    } else {
+      // Group by year for yearly view
+      const dataByYear = new Map<string, { income: number; expense: number }>();
+      
+      // Add incomes to their respective years
+      filteredIncomes.forEach(income => {
+        const yearKey = format(new Date(income.date), 'yyyy');
+        const current = dataByYear.get(yearKey) || { income: 0, expense: 0 };
+        dataByYear.set(yearKey, { 
+          ...current, 
+          income: current.income + income.amount 
+        });
+      });
+      
+      // Add expenses to their respective years
+      filteredExpenses.forEach(expense => {
+        const yearKey = format(new Date(expense.date), 'yyyy');
+        const current = dataByYear.get(yearKey) || { income: 0, expense: 0 };
+        dataByYear.set(yearKey, { 
+          ...current, 
+          expense: current.expense + expense.amount 
+        });
+      });
+      
+      // Convert to array for the chart
+      const chartData = Array.from(dataByYear.entries())
+        .sort(([yearA], [yearB]) => yearA.localeCompare(yearB))
+        .map(([year, data]) => ({
+          name: year,
           Pendapatan: data.income,
           Pengeluaran: data.expense,
           Saldo: data.income - data.expense
@@ -244,10 +284,11 @@ const CashSummary = () => {
             </div>
             
             <div className="flex flex-wrap gap-3 items-center">
-              <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'daily' | 'monthly')}>
+              <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'daily' | 'monthly' | 'yearly')}>
                 <TabsList>
                   <TabsTrigger value="daily">Harian</TabsTrigger>
                   <TabsTrigger value="monthly">Bulanan</TabsTrigger>
+                  <TabsTrigger value="yearly">Tahunan</TabsTrigger>
                 </TabsList>
               </Tabs>
 

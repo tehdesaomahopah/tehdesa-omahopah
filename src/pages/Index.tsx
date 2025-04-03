@@ -9,17 +9,25 @@ import { BarChart } from "@/components/ui/charts";
 import { useIncomeComparison } from "@/hooks/income/useIncomeComparison";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DateFilterSelector from "@/components/filters/DateFilterSelector";
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
   // View type state (monthly or yearly)
-  const [viewType, setViewType] = useState<"monthly" | "yearly">("monthly");
+  const [viewType, setViewType] = useState<"monthly" | "yearly">("yearly"); // Changed default to yearly
   
   // Month and Year selections
   const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'MM'));
   const [selectedYear, setSelectedYear] = useState<string>(format(new Date(), 'yyyy'));
+  
+  // Display type (chart or table)
+  const [displayType, setDisplayType] = useState<"chart" | "table">("chart");
+  
+  // Active tab (income or expense)
+  const [activeTab, setActiveTab] = useState<"income" | "expense">("income");
   
   const businesses = [
     { id: "cijati", name: "Teh Desa Cijati", image: "/lovable-uploads/f9c2176e-769a-418b-b132-effcf585d9d2.png" },
@@ -28,8 +36,9 @@ const Index = () => {
   ];
 
   const { 
-    chartData, 
-    isLoading: isLoadingIncomeData 
+    incomeChartData,
+    expenseChartData, 
+    isLoading: isLoadingComparisonData 
   } = useIncomeComparison(
     businesses.map(b => b.id), 
     viewType, 
@@ -66,6 +75,9 @@ const Index = () => {
   const periodText = viewType === 'monthly' 
     ? `${months.find(m => m.value === selectedMonth)?.label} ${selectedYear}`
     : `Tahun ${selectedYear}`;
+    
+  // Get the active chart data based on current tab
+  const activeChartData = activeTab === "income" ? incomeChartData : expenseChartData;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-green-100">
@@ -110,18 +122,23 @@ const Index = () => {
           </Card>
         </div>
 
-        {/* Income Comparison Chart */}
+        {/* Comparison Charts */}
         <div className="max-w-6xl mx-auto">
           <Card className="border-green-200 shadow-lg">
             <CardHeader className="bg-green-50 border-b border-green-100">
               <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div>
-                  <CardTitle className="text-2xl text-green-800">Perbandingan Pendapatan</CardTitle>
-                  <CardDescription>
+                  <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "income" | "expense")}>
+                    <TabsList>
+                      <TabsTrigger value="income">Perbandingan Pendapatan</TabsTrigger>
+                      <TabsTrigger value="expense">Perbandingan Pengeluaran</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  <CardDescription className="mt-2">
                     Periode: {periodText}
                   </CardDescription>
                 </div>
-                <div>
+                <div className="flex flex-col md:flex-row gap-2">
                   <DateFilterSelector
                     filterType={viewType === 'monthly' ? 'month' : 'year'}
                     selectedMonth={selectedMonth}
@@ -130,41 +147,75 @@ const Index = () => {
                     onMonthChange={setSelectedMonth}
                     onYearChange={setSelectedYear}
                   />
+                  <Select value={displayType} onValueChange={(value) => setDisplayType(value as "chart" | "table")}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Tampilan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="chart">Grafik</SelectItem>
+                      <SelectItem value="table">Tabel</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="h-96 w-full">
-                {isLoadingIncomeData ? (
-                  <div className="flex justify-center items-center h-full">
-                    <p>Memuat data pendapatan...</p>
-                  </div>
-                ) : chartData.length === 0 ? (
-                  <div className="flex justify-center items-center h-full">
-                    <p>Tidak ada data pendapatan pada periode ini.</p>
-                  </div>
-                ) : (
+              {isLoadingComparisonData ? (
+                <div className="flex justify-center items-center h-96">
+                  <p>Memuat data pendapatan...</p>
+                </div>
+              ) : activeChartData.length === 0 ? (
+                <div className="flex justify-center items-center h-96">
+                  <p>Tidak ada data pada periode ini.</p>
+                </div>
+              ) : displayType === "chart" ? (
+                <div className="h-96 w-full">
                   <BarChart 
-                    data={chartData}
+                    data={activeChartData}
                     dataKeys={["Cijati", "Shaquilla", "Kartini"]}
                     colors={["#10b981", "#E25822", "#DDA0DD"]} 
                   />
-                )}
-              </div>
-              <div className="flex justify-center mt-4 gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  <span>Teh Desa Cijati</span>
+                  <div className="flex justify-center mt-4 gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      <span>Cijati</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#E25822" }}></div>
+                      <span>Shaquilla</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#DDA0DD" }}></div>
+                      <span>Kartini</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#E25822" }}></div>
-                  <span>Teh Desa Shaquilla</span>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>
+                          {viewType === "yearly" ? "Bulan" : "Tanggal"}
+                        </TableHead>
+                        <TableHead>Cijati</TableHead>
+                        <TableHead>Shaquilla</TableHead>
+                        <TableHead>Kartini</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {activeChartData.map((item, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell>Rp {item.Cijati.toLocaleString('id-ID')}</TableCell>
+                          <TableCell>Rp {item.Shaquilla.toLocaleString('id-ID')}</TableCell>
+                          <TableCell>Rp {item.Kartini.toLocaleString('id-ID')}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: "#DDA0DD" }}></div>
-                  <span>Teh Desa Kartini</span>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>

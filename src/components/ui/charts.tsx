@@ -47,6 +47,8 @@ export const BarChart = ({
             key={key} 
             dataKey={key} 
             fill={colorsArray[index % colorsArray.length]} 
+            // Hide name since it's already in the legend/tooltip
+            name={key}
           />
         ))}
       </RechartsBarChart>

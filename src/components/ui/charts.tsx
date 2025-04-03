@@ -61,13 +61,21 @@ export const LineChart = ({
   dataKey, 
   stroke = "#8884d8", 
   dataKey2, 
-  stroke2 
+  stroke2,
+  lineType = "monotone",
+  dotSize = 8,
+  hideGrid = false,
+  yAxisFormatter
 }: { 
   data: any[]; 
   dataKey: string; 
   stroke?: string; 
   dataKey2?: string; 
-  stroke2?: string 
+  stroke2?: string;
+  lineType?: "monotone" | "basis" | "linear" | "natural" | "step" | "stepBefore" | "stepAfter";
+  dotSize?: number;
+  hideGrid?: boolean;
+  yAxisFormatter?: (value: number) => string;
 }) => {
   return (
     <ChartContainer 
@@ -80,19 +88,32 @@ export const LineChart = ({
       className="h-80 w-full"
     >
       <RechartsLineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" />
+        {!hideGrid && <CartesianGrid strokeDasharray="3 3" />}
         <XAxis 
           dataKey="name" 
           tick={{ fontSize: 12 }}
           height={60}
           tickMargin={10}
         />
-        <YAxis />
+        <YAxis 
+          tickFormatter={yAxisFormatter}
+        />
         <ChartTooltip content={<ChartTooltipContent />} />
         <Legend />
-        <Line type="monotone" dataKey={dataKey} stroke={stroke} activeDot={{ r: 8 }} />
+        <Line 
+          type={lineType} 
+          dataKey={dataKey} 
+          stroke={stroke} 
+          activeDot={{ r: dotSize }}
+          strokeWidth={2}
+        />
         {dataKey2 && stroke2 && (
-          <Line type="monotone" dataKey={dataKey2} stroke={stroke2} />
+          <Line 
+            type={lineType} 
+            dataKey={dataKey2} 
+            stroke={stroke2}
+            strokeWidth={2} 
+          />
         )}
       </RechartsLineChart>
     </ChartContainer>

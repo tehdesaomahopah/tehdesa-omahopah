@@ -29,7 +29,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       case 'shaquilla':
         return 'Teh Desa Shaquilla';
       case 'kartini':
-        return 'Teh Desa Kartini';
+        return 'Teh Wangi Kartini';
       default:
         return 'Teh Desa';
     }

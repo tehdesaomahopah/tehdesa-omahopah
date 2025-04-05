@@ -32,7 +32,7 @@ const Index = () => {
   const businesses = [
     { id: "cijati", name: "Teh Desa Cijati", image: "/lovable-uploads/f9c2176e-769a-418b-b132-effcf585d9d2.png" },
     { id: "shaquilla", name: "Teh Desa Shaquilla", image: "/lovable-uploads/6e49ba5d-9a6a-4856-8ced-cf1ec2227d64.png" },
-    { id: "kartini", name: "Teh Desa Kartini", image: "/lovable-uploads/857b8953-cda3-4d8c-999b-f517b5af6cab.png" }
+    { id: "kartini", name: "Teh Wangi Kartini", image: "/lovable-uploads/857b8953-cda3-4d8c-999b-f517b5af6cab.png" }
   ];
 
   const { 

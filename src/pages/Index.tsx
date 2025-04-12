@@ -111,7 +111,7 @@ const Index = () => {
                     <img 
                       src={business.image} 
                       alt={business.name} 
-                      className={`w-48 h-48 object-contain mb-4 ${business.id === 'kartini' ? 'scale-125' : ''}`}
+                      className={`w-48 h-48 object-contain mb-4 ${business.id === 'kartini' ? 'scale-115' : ''}`}
                     />
                     <h3 className="font-medium text-green-800">{business.name}</h3>
                   </div>

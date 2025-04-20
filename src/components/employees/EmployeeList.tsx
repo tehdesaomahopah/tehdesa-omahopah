@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
-import { Edit2, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -11,21 +10,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Calendar } from "@/components/ui/calendar";
 import DateFilterSelector from "@/components/filters/DateFilterSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import EmployeeEditForm from "./EmployeeEditForm";
+import MonthlyView from "./tables/MonthlyView";
+import YearlyView from "./tables/YearlyView";
+import CustomView from "./tables/CustomView";
 
 interface EmployeeListProps {
   businessId: string;
@@ -120,7 +111,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ businessId }) => {
       </div>
 
       {viewType === "custom" && (
-        <div className="flex gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <label className="text-sm font-medium">Tanggal Mulai</label>
             <Calendar
@@ -145,65 +136,19 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ businessId }) => {
       )}
 
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Tanggal</TableHead>
-              <TableHead>Nama</TableHead>
-              {viewType === "custom" && <TableHead className="text-right">Aksi</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={3} className="text-center">
-                  Memuat data...
-                </TableCell>
-              </TableRow>
-            ) : employees?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={3} className="text-center">
-                  Tidak ada data
-                </TableCell>
-              </TableRow>
-            ) : (
-              employees?.map((employee) => (
-                <TableRow key={employee.id}>
-                  <TableCell>
-                    {format(new Date(employee.work_date), "dd MMMM yyyy", { locale: idLocale })}
-                  </TableCell>
-                  <TableCell>{employee.name}</TableCell>
-                  {viewType === "custom" && (
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="icon">
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Edit Data Karyawan</DialogTitle>
-                            </DialogHeader>
-                            <EmployeeEditForm employee={employee} />
-                          </DialogContent>
-                        </Dialog>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => handleDelete(employee.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        {viewType === "monthly" && (
+          <MonthlyView data={employees || []} isLoading={isLoading} />
+        )}
+        {viewType === "yearly" && (
+          <YearlyView data={employees || []} isLoading={isLoading} />
+        )}
+        {viewType === "custom" && (
+          <CustomView 
+            data={employees || []} 
+            isLoading={isLoading} 
+            onDelete={handleDelete}
+          />
+        )}
       </div>
     </div>
   );

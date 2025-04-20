@@ -10,8 +10,8 @@ import Income from "./pages/dashboard/Income";
 import Expense from "./pages/dashboard/Expense";
 import CashSummary from "./pages/dashboard/CashSummary";
 import Reports from "./pages/dashboard/Reports";
+import Employees from "./pages/dashboard/Employees";
 
-// Create a client outside of the component
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -27,7 +27,7 @@ const App = () => {
             <Route path="/dashboard/:businessId/expense" element={<Expense />} />
             <Route path="/dashboard/:businessId/cash" element={<CashSummary />} />
             <Route path="/dashboard/:businessId/reports" element={<Reports />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/dashboard/:businessId/employees" element={<Employees />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

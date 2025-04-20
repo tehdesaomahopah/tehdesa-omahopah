@@ -5,7 +5,8 @@ import {
   ArrowUpCircle, 
   ArrowDownCircle, 
   Wallet, 
-  FileText, 
+  FileText,
+  Users,
   ChevronLeft,
   Home
 } from "lucide-react";
@@ -60,6 +61,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       icon: FileText, 
       label: "Laporan", 
       href: `/dashboard/${businessId}/reports` 
+    },
+    { 
+      icon: Users, 
+      label: "KaryawanKu", 
+      href: `/dashboard/${businessId}/employees` 
     },
   ];
 

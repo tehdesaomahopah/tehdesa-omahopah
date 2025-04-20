@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { 
@@ -38,11 +37,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   const navigationItems = [
     { 
-      icon: Home, 
-      label: "Home", 
-      href: "/" 
-    },
-    { 
       icon: ArrowUpCircle, 
       label: "Pendapatan", 
       href: `/dashboard/${businessId}/income` 
@@ -58,14 +52,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       href: `/dashboard/${businessId}/cash` 
     },
     { 
-      icon: FileText, 
-      label: "Laporan", 
-      href: `/dashboard/${businessId}/reports` 
-    },
-    { 
       icon: Users, 
       label: "KaryawanKu", 
       href: `/dashboard/${businessId}/employees` 
+    },
+    { 
+      icon: FileText, 
+      label: "Laporan", 
+      href: `/dashboard/${businessId}/reports` 
     },
   ];
 

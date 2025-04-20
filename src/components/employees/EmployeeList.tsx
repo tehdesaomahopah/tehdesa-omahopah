@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
+import { id as idLocale } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
 import { Edit2, Trash2 } from "lucide-react";
 import {
@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Calendar } from "@/components/ui/calendar";
 import DateFilterSelector from "@/components/filters/DateFilterSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -112,6 +113,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ businessId }) => {
               selectedYear={selectedYear}
               onMonthChange={setSelectedMonth}
               onYearChange={setSelectedYear}
+              onFilterTypeChange={(type) => setViewType(type === "month" ? "monthly" : "yearly")}
             />
           )}
         </div>
@@ -126,7 +128,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ businessId }) => {
               selected={startDate}
               onSelect={(date) => date && setStartDate(date)}
               className="rounded-md border"
-              locale={id}
+              locale={idLocale}
             />
           </div>
           <div className="flex-1">
@@ -136,7 +138,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ businessId }) => {
               selected={endDate}
               onSelect={(date) => date && setEndDate(date)}
               className="rounded-md border"
-              locale={id}
+              locale={idLocale}
             />
           </div>
         </div>
@@ -168,7 +170,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({ businessId }) => {
               employees?.map((employee) => (
                 <TableRow key={employee.id}>
                   <TableCell>
-                    {format(new Date(employee.work_date), "dd MMMM yyyy", { locale: id })}
+                    {format(new Date(employee.work_date), "dd MMMM yyyy", { locale: idLocale })}
                   </TableCell>
                   <TableCell>{employee.name}</TableCell>
                   {viewType === "custom" && (

@@ -2,6 +2,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -102,7 +103,7 @@ const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({ employee }) => {
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {date ? format(date, "dd MMMM yyyy", { locale: id }) : "Pilih tanggal"}
+              {date ? format(date, "dd MMMM yyyy", { locale: idLocale }) : "Pilih tanggal"}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -110,7 +111,7 @@ const EmployeeEditForm: React.FC<EmployeeEditFormProps> = ({ employee }) => {
               mode="single"
               selected={date}
               onSelect={(newDate) => newDate && setDate(newDate)}
-              locale={id}
+              locale={idLocale}
             />
           </PopoverContent>
         </Popover>

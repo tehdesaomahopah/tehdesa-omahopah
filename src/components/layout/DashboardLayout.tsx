@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { 
@@ -6,8 +7,8 @@ import {
   Wallet, 
   FileText,
   Users,
-  ChevronLeft,
-  Home
+  Home,
+  ChevronLeft 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   };
 
   const navigationItems = [
+    { 
+      icon: Home, 
+      label: "Home", 
+      href: "/" 
+    },
     { 
       icon: ArrowUpCircle, 
       label: "Pendapatan", 
